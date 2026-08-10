@@ -463,6 +463,107 @@ async function renderedChecks(m) {
   const robots = await fetchPage('/robots.txt').catch(() => null);
   if (robots && /Disallow:\s*\/admin/.test(robots.html)) pass('robots.txt disallows admin');
   else fail('robots.txt disallows admin', 'missing Disallow: /admin');
+
+  await checkLandingPages(m, robots);
+}
+
+/**
+ * PAID LANDING PAGES — the opposite rules to every other page.
+ *
+ * A landing page fails in ways a normal page cannot: it leaks into the search
+ * index, it offers an escape hatch back into the site, or it ships with
+ * EXAMPLE copy still in it. None of those look broken. All of them cost money
+ * quietly, which is exactly why they are checked rather than trusted.
+ */
+async function checkLandingPages(m, robots) {
+  const routes = m.landingRoutes ?? [];
+
+  if (robots && !/Disallow:\s*\/lp\//.test(robots.html)) {
+    fail('robots.txt disallows /lp/', 'missing Disallow: /lp/');
+  } else if (robots) {
+    pass('robots.txt disallows /lp/');
+  }
+
+  if (routes.length === 0) {
+    // Not a failure. A client with no paid campaigns has no landing pages.
+    return;
+  }
+
+  const leaked = [];
+  const indexable = [];
+  const noLabel = [];
+  const noForm = [];
+  const placeholder = [];
+  const unlocked = [];
+
+  for (const [i, route] of routes.entries()) {
+    let page;
+    try {
+      page = await fetchPage(route);
+    } catch (error) {
+      fail('Landing page reachable', `${route} — ${error.message}`);
+      continue;
+    }
+    if (page.status !== 200) {
+      fail('Landing page returns 200', `${route} returned ${page.status}`);
+      continue;
+    }
+    const html = page.html;
+
+    // 1. Must be noindex. Three mechanisms protect this; check the one that
+    //    travels with the page itself.
+    if (!/<meta\s+name=["']robots["']\s+content=["'][^"']*noindex/i.test(html)) {
+      indexable.push(route);
+    }
+
+    // 2. No link back into the site. Every escape hatch is a paid click
+    //    leaving without converting. tel:, the form, and the one configured
+    //    exit link are allowed; internal page links are not.
+    //    Only <a> tags count — a favicon or a stylesheet is an asset, not an
+    //    exit. Matching every href was a false positive on /brand/favicon.svg.
+    const internal = [...html.matchAll(/<a\b[^>]*\bhref=["'](\/[^"'#?]*)["']/gi)]
+      .map((x) => x[1])
+      .filter(
+        (h) =>
+          h !== '' &&
+          !h.startsWith('/lp/') &&
+          !h.startsWith('/_astro') &&
+          h !== m.landingExitHrefs?.[i],
+      );
+    if (internal.length) leaked.push(`${route}: ${[...new Set(internal)].slice(0, 4).join(', ')}`);
+
+    // 3. The FTC advertorial disclosure must actually render.
+    const label = m.landingLabels?.[i];
+    if (label && !html.includes(label)) noLabel.push(route);
+
+    // 4. A landing page with no form cannot convert.
+    if (!/<form\b/i.test(html) && !/quiz-/.test(html)) noForm.push(route);
+
+    // 5. Placeholder copy that reached a paid page.
+    if (/\bEXAMPLE\b|\bLorem ipsum\b|\bTODO\b|\[service area\]/i.test(html)) placeholder.push(route);
+
+    // 6. Locked viewport — a pinch-zoom on mobile paid traffic is a misfired
+    //    tap on a form field.
+    if (!/user-scalable=no/.test(html)) unlocked.push(route);
+  }
+
+  report('Landing pages are noindex', indexable);
+  report('No organic links off a landing page', leaked);
+  report('Advertorial label rendered', noLabel);
+  report('Landing page has a lead form', noForm);
+  report('No placeholder copy on a landing page', placeholder);
+  report('Landing page viewport is locked', unlocked);
+
+  try {
+    const sitemapPath = join(ROOT, 'dist', 'client', 'sitemap-0.xml');
+    if (existsSync(sitemapPath)) {
+      const xml = await readFile(sitemapPath, 'utf8');
+      if (xml.includes('/lp/')) fail('Sitemap excludes landing pages', 'found /lp/ in the sitemap');
+      else pass('Sitemap excludes landing pages');
+    }
+  } catch (error) {
+    warn('Landing sitemap check', error.message);
+  }
 }
 
 function escapeRe(value) {

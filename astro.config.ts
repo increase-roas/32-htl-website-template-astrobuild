@@ -10,6 +10,11 @@ import tailwindcss from '@tailwindcss/vite';
 // startup rather than halfway through rendering.
 import { writeFile, mkdir } from 'node:fs/promises';
 import { site, derived, enabledCategories } from './src/config';
+// Imported HERE on purpose: this file runs at build time, so an invalid
+// landing page (missing footnote on a superlative, a category the client does
+// not sell, no CTA) fails `npm run build` rather than surfacing as a runtime
+// error on the first paid click.
+import { landings } from './src/config/landings';
 
 /**
  * Writes the resolved config to dist/gate-manifest.json at the end of every
@@ -58,15 +63,36 @@ function gateManifest() {
           },
           integrations: site.integrations,
           logos: site.brand.logos,
-          /** Public routes the gate should crawl. */
+          /**
+           * Public routes the gate should crawl.
+           *
+           * The nav hrefs are included because they were NOT before, and a
+           * nav link pointing at a page that does not exist passed every
+           * check while 404ing in a customer's face. Dedup keeps the crawl
+           * from fetching the same page twice.
+           */
           routes: [
-            '/',
-            '/inventory',
-            '/find-your-match',
-            '/thank-you',
-            '/404',
-            ...enabledCategories.map((c) => c.href),
-          ],
+            ...new Set([
+              '/',
+              '/inventory',
+              '/find-your-match',
+              '/thank-you',
+              '/404',
+              ...enabledCategories.map((c) => c.href),
+              ...derived.headerNav.map((n) => n.href),
+              ...derived.footerNav.map((n) => n.href),
+              site.nav.primaryCta.href,
+              ...site.nav.legalItems.map((l) => l.href),
+            ]),
+          ].filter((href) => href.startsWith('/')),
+
+          /** Paid landing pages — crawled separately, with opposite rules. */
+          landingRoutes: landings.map((lp) => `/lp/${lp.slug}`),
+          landingLabels: landings.map((lp) => lp.advertorialLabel),
+          // The ONE link each page is allowed off itself, or null. The gate
+          // permits exactly this href and treats any other internal link as
+          // a leak.
+          landingExitHrefs: landings.map((lp) => lp.exitLink?.href ?? null),
         };
         // Written to dist/, NOT dist/client/. Anything in the client dir is
         // publicly served — a manifest of the client's configuration sitting
@@ -96,7 +122,10 @@ export default defineConfig({
     gateManifest(),
     sitemap({
       // Admin is never public, never crawled, never linked.
-      filter: (page) => !page.includes('/admin'),
+      // /lp/ is paid-only: indexed, a landing page competes with the real
+      // site for its own keywords and collects organic traffic the client is
+      // already paying to reach.
+      filter: (page) => !page.includes('/admin') && !page.includes('/lp/'),
       // In SSR the sitemap only sees prerendered routes, so the dynamic
       // [category] pages have to be declared. They are declared FROM the
       // enabled-categories array, which means a category the client does not

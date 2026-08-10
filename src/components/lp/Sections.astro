@@ -1,0 +1,367 @@
+---
+/**
+ * LANDING PAGE SECTION RENDERER.
+ *
+ * One dispatcher for all eight section types. Every string on screen arrives
+ * as a prop from the landing config — there is no copy in this file, exactly
+ * as there is no copy in Header or Footer.
+ *
+ * The section ORDER comes from the config array too, so rearranging a page is
+ * reordering a list, not editing markup.
+ */
+import type { LandingSection } from '../../config/landing.schema';
+import LeadQuiz from '../LeadQuiz.astro';
+
+interface Props {
+  sections: readonly LandingSection[];
+  sourcePage: string;
+  /** Pre-selects the category in the lead payload. */
+  category: string;
+}
+
+const { sections, sourcePage } = Astro.props;
+
+/** Footnote markers are numbered in the order they appear on the page. */
+let footnoteIndex = 0;
+const marker = () => String(++footnoteIndex);
+---
+
+{
+  sections.map((section, i) => {
+    switch (section.type) {
+      /* ---------------- HERO ---------------- */
+      case 'hero':
+        return (
+          <section class="lp-hero">
+            <h1 class="lp-h1">{section.headline}</h1>
+            <p class="lp-subhead">{section.subhead}</p>
+            {section.image && (
+              <img
+                class="lp-hero-img"
+                src={section.image}
+                alt=""
+                width="720"
+                height="420"
+                loading="eager"
+                decoding="async"
+              />
+            )}
+            <ul class="lp-bullets">
+              {section.bullets.map((b) => (
+                <li>
+                  {b.text}
+                  {b.superlative && <sup class="lp-fn">{marker()}</sup>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+
+      /* ---------------- BENEFITS ---------------- */
+      case 'benefits':
+        return (
+          <section class="lp-section">
+            {section.heading && <h2 class="lp-h2">{section.heading}</h2>}
+            <div class="lp-benefits">
+              {section.items.map((item) => (
+                <div class="lp-benefit">
+                  {item.icon && <img src={item.icon} alt="" width="32" height="32" loading="lazy" />}
+                  <h3 class="lp-h3">{item.title}</h3>
+                  <p class="lp-body">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+
+      /* ---------------- GALLERY ---------------- */
+      case 'gallery':
+        return (
+          <section class="lp-section">
+            {section.heading && <h2 class="lp-h2">{section.heading}</h2>}
+            <div class="lp-gallery">
+              {section.images.map((img, n) => (
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  width="340"
+                  height="255"
+                  loading={n < 2 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
+              ))}
+            </div>
+          </section>
+        );
+
+      /* ---------------- TESTIMONIALS ---------------- */
+      case 'testimonials':
+        return (
+          <section class="lp-section">
+            {section.heading && <h2 class="lp-h2">{section.heading}</h2>}
+            <div class="lp-testimonials">
+              {section.items.map((t) => (
+                <figure class="lp-testimonial">
+                  <blockquote>{t.quote}</blockquote>
+                  {t.detail && <p class="lp-detail">{t.detail}</p>}
+                  <figcaption>
+                    {t.name}
+                    {t.location && <span class="lp-loc"> · {t.location}</span>}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        );
+
+      /* ---------------- TRUST BAR ---------------- */
+      case 'trust':
+        return (
+          <section class="lp-trust">
+            <ul class="lp-trust-items">
+              {section.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+            {section.logos.length > 0 && (
+              <div class="lp-trust-logos">
+                {section.logos.map((l) => (
+                  <img src={l.src} alt={l.alt} height="28" width="90" loading="lazy" />
+                ))}
+              </div>
+            )}
+          </section>
+        );
+
+      /* ---------------- BIG NUMBER ---------------- */
+      case 'bignumber':
+        return (
+          <section class="lp-bignumber">
+            <p class="lp-bignumber-value">{section.value}</p>
+            <p class="lp-bignumber-label">
+              {section.label}
+              {section.claim?.superlative && <sup class="lp-fn">{marker()}</sup>}
+            </p>
+          </section>
+        );
+
+      /* ---------------- CTA ---------------- */
+      case 'cta':
+        return (
+          <section class="lp-cta" id={i === sections.findIndex((s) => s.type === 'cta') ? 'get-started' : undefined}>
+            <h2 class="lp-h2">{section.heading}</h2>
+            {section.subtext && <p class="lp-body">{section.subtext}</p>}
+            {/*
+              The SAME quiz the rest of the site uses — same validation, same
+              autocomplete tokens, same event_id dedup, same GHL sync. A
+              landing page does not get its own form to fall out of step.
+            */}
+            <LeadQuiz
+              sourcePage={sourcePage}
+              heading={section.buttonLabel}
+              variant={i === 0 ? 'primary' : 'secondary'}
+              hydrate={i < 3 ? 'load' : 'visible'}
+            />
+          </section>
+        );
+
+      /* ---------------- FAQ ---------------- */
+      case 'faq':
+        return (
+          <section class="lp-section">
+            {section.heading && <h2 class="lp-h2">{section.heading}</h2>}
+            <div class="lp-faq">
+              {section.items.map((item) => (
+                <details class="lp-faq-item">
+                  <summary>{item.q}</summary>
+                  <p class="lp-body">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        );
+    }
+  })
+}
+
+<style>
+  .lp-hero {
+    padding: 2rem 0 1rem;
+  }
+  .lp-h1 {
+    font-family: var(--brand-font-display);
+    font-size: clamp(1.85rem, 6vw, 2.6rem);
+    line-height: 1.12;
+    font-weight: 800;
+    color: var(--brand-night);
+    margin: 0;
+  }
+  .lp-subhead {
+    margin: 0.9rem 0 0;
+    font-size: 1.05rem;
+    color: var(--brand-ink-muted);
+  }
+  .lp-hero-img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--brand-radius-card);
+    margin: 1.5rem 0 0;
+  }
+  .lp-bullets {
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-bullets li {
+    position: relative;
+    padding: 0.55rem 0 0.55rem 1.9rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--brand-deep) 12%, transparent);
+  }
+  .lp-bullets li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--brand-accent-dark);
+    font-weight: 700;
+  }
+  .lp-fn {
+    font-size: 0.65em;
+    color: var(--brand-ink-muted);
+    margin-left: 0.15em;
+  }
+  .lp-section {
+    padding: 2.5rem 0;
+  }
+  .lp-h2 {
+    font-family: var(--brand-font-display);
+    font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+    font-weight: 700;
+    color: var(--brand-night);
+    margin: 0 0 1.1rem;
+  }
+  .lp-h3 {
+    font-family: var(--brand-font-display);
+    font-size: 1.05rem;
+    margin: 0.4rem 0 0.3rem;
+  }
+  .lp-body {
+    color: var(--brand-ink-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .lp-benefits {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .lp-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+  .lp-gallery img {
+    width: 100%;
+    height: auto;
+    border-radius: calc(var(--brand-radius-card) / 2);
+    object-fit: cover;
+  }
+  .lp-testimonials {
+    display: grid;
+    gap: 1rem;
+  }
+  .lp-testimonial {
+    margin: 0;
+    padding: 1.1rem 1.2rem;
+    background: var(--brand-surface-alt);
+    border-radius: var(--brand-radius-card);
+  }
+  .lp-testimonial blockquote {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  .lp-detail {
+    margin: 0.6rem 0 0;
+    font-size: 0.88rem;
+    color: var(--brand-ink-muted);
+  }
+  .lp-testimonial figcaption {
+    margin-top: 0.7rem;
+    font-family: var(--brand-font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-accent-dark);
+  }
+  .lp-loc {
+    color: var(--brand-ink-muted);
+  }
+  .lp-trust {
+    padding: 1.5rem 0;
+    border-block: 1px solid color-mix(in srgb, var(--brand-deep) 12%, transparent);
+  }
+  .lp-trust-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.4rem;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--brand-font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand-ink-muted);
+  }
+  .lp-trust-logos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .lp-bignumber {
+    text-align: center;
+    padding: 2.5rem 0;
+  }
+  .lp-bignumber-value {
+    font-family: var(--brand-font-display);
+    font-size: clamp(2.6rem, 11vw, 4rem);
+    font-weight: 800;
+    color: var(--brand-accent-dark);
+    margin: 0;
+    line-height: 1;
+  }
+  .lp-bignumber-label {
+    margin: 0.4rem 0 0;
+    color: var(--brand-ink-muted);
+  }
+  .lp-cta {
+    padding: 2rem 0;
+  }
+  .lp-faq {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .lp-faq-item {
+    border: 1px solid color-mix(in srgb, var(--brand-deep) 12%, transparent);
+    border-radius: calc(var(--brand-radius-card) / 2);
+    padding: 0.85rem 1rem;
+  }
+  .lp-faq-item summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .lp-faq-item p {
+    margin-top: 0.6rem;
+  }
+
+  @media (min-width: 640px) {
+    .lp-benefits {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .lp-gallery {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
