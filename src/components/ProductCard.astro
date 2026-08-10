@@ -18,7 +18,7 @@
 import type { Product } from '../lib/db';
 import { assetOrWarn } from '../lib/assets';
 import { site } from '../config';
-import { formatPrice, formatMonthly, statusLabel, isMutedStatus, ASK_FOR_PRICE } from '../lib/format';
+import { pricingFor, statusLabel, isMutedStatus, ASK_FOR_PRICE } from '../lib/format';
 
 interface Props {
   product: Product;
@@ -37,8 +37,7 @@ const { product, financingHref } = Astro.props;
 const financingLink = financingHref ?? (site.financing ? '/financing' : null);
 
 const image = assetOrWarn(product.primaryImage, `product "${product.slug}"`);
-const price = formatPrice(product.price);
-const monthly = formatMonthly(product.monthlyPayment);
+const { cash, monthly, askForPrice } = pricingFor(product);
 const badge = product.promoLabel || statusLabel(product.status, product.quantity);
 const muted = isMutedStatus(product.status);
 const href = `${product.categoryHref}/${product.slug}`;
@@ -84,22 +83,29 @@ const pills = product.quickFacts.length > 0 ? product.quickFacts.slice(0, 3) : f
         )
       }
 
-      <div class="inv-price-box">
-        <div class="inv-price-left">
-          <p class:list={['inv-card-price', !price && 'inv-card-price--ask']}>
-            {price ?? ASK_FOR_PRICE}
-          </p>
-          {product.deliveryPromise && <p class="inv-card-delivery">{product.deliveryPromise}</p>}
-        </div>
-        {
-          monthly && (
-            <div>
-              <p class="inv-financing-label">As low as</p>
-              <p class="inv-card-monthly">{monthly}</p>
+      {
+        /* Sold and pending units print no price box at all. The tag on the
+           image already says what happened to them, and a price on something
+           that cannot be bought is an offer that is not real. */
+        (cash || askForPrice || monthly) && (
+          <div class="inv-price-box">
+            <div class="inv-price-left">
+              <p class:list={['inv-card-price', askForPrice && 'inv-card-price--ask']}>
+                {cash ?? ASK_FOR_PRICE}
+              </p>
+              {product.deliveryPromise && (
+                <p class="inv-card-delivery">{product.deliveryPromise}</p>
+              )}
             </div>
-          )
-        }
-      </div>
+            {monthly && (
+              <div>
+                <p class="inv-financing-label">As low as</p>
+                <p class="inv-card-monthly">{monthly}</p>
+              </div>
+            )}
+          </div>
+        )
+      }
     </div>
 
     <div class="inv-card-actions">

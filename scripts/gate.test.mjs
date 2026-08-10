@@ -198,6 +198,48 @@ test('PASSES on the template as it stands', async () => {
   assertPasses(run, 'Financing link is gated on the financing block');
 });
 
+/**
+ * A surface formatting its own price. The rule it skips — sold units quote
+ * nothing — is invisible at the call site, which is exactly why the call
+ * site is not allowed to exist.
+ */
+test('FAILS when a component formats its own price', async () => {
+  const run = await withFixture(async ({ dir }) => {
+    const file = join(dir, 'src', 'components', 'ProductCard.astro');
+    const body = await readFile(file, 'utf8');
+    await writeFile(file, body.replace('pricingFor(product)', 'formatPrice(product.price)'));
+  });
+  assertFails(run, 'Prices go through pricingFor()');
+});
+
+test('PASSES when every price goes through pricingFor()', async () => {
+  const run = await withFixture(null);
+  assertPasses(run, 'Prices go through pricingFor()');
+});
+
+/**
+ * The original defect, restored: publish any positive price, regardless of
+ * whether the page will show one.
+ */
+test('FAILS when structured data publishes a price on its own terms', async () => {
+  const run = await withFixture(async ({ dir }) => {
+    const file = join(dir, 'src', 'lib', 'seo.ts');
+    const body = await readFile(file, 'utf8');
+    const broken = body.replace(
+      'if (pricingFor(product).cash !== null) offer.price = product.price;',
+      'if (product.price > 0) offer.price = product.price;',
+    );
+    if (broken === body) throw new Error('fixture did not reintroduce the defect');
+    await writeFile(file, broken.replace("import { pricingFor } from './format';", ''));
+  });
+  assertFails(run, 'Structured data prices go through pricingFor()');
+});
+
+test('PASSES when the Offer takes its price from pricingFor()', async () => {
+  const run = await withFixture(null);
+  assertPasses(run, 'Structured data prices go through pricingFor()');
+});
+
 pending('No brand colour literals outside src/config', 'work order item 7 + 8');
 pending('No category slugs hardcoded outside src/config', 'work order item 20');
 pending('No /admin link in any component', 'work order item 20');

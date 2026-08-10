@@ -214,6 +214,56 @@ async function sourceChecks() {
     pass('Financing link is gated on the financing block');
   }
 
+  // --- 3d. Prices go through pricingFor() -------------------------
+  // A price is not just a number to format. Whether it may be shown at all
+  // depends on the unit's status and on the display config, and a surface
+  // that formats its own price skips both. formatPrice/formatMonthly are
+  // module-private for that reason; this catches anyone re-exporting or
+  // reimplementing them.
+  const priceOffenders = [];
+  for (const file of files) {
+    const rel = relative(ROOT, file);
+    if (rel.startsWith('src/lib/')) continue;
+    const body = stripComments(await readFile(file, 'utf8'));
+    if (/\bformatPrice\b|\bformatMonthly\b/.test(body)) priceOffenders.push(rel);
+  }
+  if (priceOffenders.length) {
+    fail(
+      'Prices go through pricingFor()',
+      `${priceOffenders.join(', ')} — formats its own price, which skips the sold/pending ` +
+        'and display-config rules. Use pricingFor().',
+    );
+  } else {
+    pass('Prices go through pricingFor()');
+  }
+
+  // --- 3e. Structured data prices go through pricingFor() ---------
+  // JSON-LD is a second surface publishing the same fact, and it is the one
+  // nobody eyeballs. A file that writes a price into schema.org output and
+  // does not consult pricingFor() is deciding for itself what may be
+  // published — which is how the DOM and the schema come to disagree.
+  const schemaPriceOffenders = [];
+  for (const file of files) {
+    const rel = relative(ROOT, file);
+    if (rel.startsWith('src/config/')) continue;
+    const body = stripComments(await readFile(file, 'utf8'));
+    // An Offer node is the only place schema.org carries a price, so that
+    // is the trigger. Matching the word "price" anywhere caught a button
+    // label on the internal proof page — a check that fires on prose is a
+    // check people learn to ignore.
+    if (!/["']@type["']\s*:\s*["']Offer["']/.test(body)) continue;
+    if (!/pricingFor\s*\(/.test(body)) schemaPriceOffenders.push(rel);
+  }
+  if (schemaPriceOffenders.length) {
+    fail(
+      'Structured data prices go through pricingFor()',
+      `${schemaPriceOffenders.join(', ')} — publishes a price to schema.org on its own terms. ` +
+        'A sold unit shows no price on the page; its Offer must not carry one either.',
+    );
+  } else {
+    pass('Structured data prices go through pricingFor()');
+  }
+
   // --- 4. Secrets are not in the repo -----------------------------
   for (const name of ['.env', '.dev.vars']) {
     if (existsSync(join(ROOT, name))) {
