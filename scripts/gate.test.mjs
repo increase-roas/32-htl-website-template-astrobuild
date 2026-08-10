@@ -20,7 +20,7 @@
  * suite exists to close were holes.
  */
 
-import { mkdtemp, cp, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, cp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -178,6 +178,24 @@ test('PASSES when the monthly payment is shown and financing is configured', asy
 test('PASSES when there is no financing block and no monthly payment', async () => {
   const run = await withFixture(null);
   assertPasses(run, 'Monthly payments require financing terms');
+});
+
+/**
+ * An ungated link to a page that only exists for some clients. The defect is
+ * in source, so the fixture mutates the copied tree rather than the manifest.
+ */
+test('FAILS when a component links to /financing without checking site.financing', async () => {
+  const run = await withFixture(async ({ dir }) => {
+    const file = join(dir, 'src', 'components', 'Footer.astro');
+    const body = await readFile(file, 'utf8');
+    await writeFile(file, `${body}\n<a href="/financing">Apply For Financing</a>\n`);
+  });
+  assertFails(run, 'Financing link is gated on the financing block');
+});
+
+test('PASSES on the template as it stands', async () => {
+  const run = await withFixture(null);
+  assertPasses(run, 'Financing link is gated on the financing block');
 });
 
 pending('No brand colour literals outside src/config', 'work order item 7 + 8');

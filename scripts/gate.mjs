@@ -190,6 +190,30 @@ async function sourceChecks() {
     pass('Autocomplete on island form fields');
   }
 
+  // --- 3c. The financing link is gated on the financing block -----
+  // /financing 404s for any client whose financing block is null. A link to
+  // it that is not gated on that block therefore ships a dead end from every
+  // page it appears on — the nav-link defect, one component further down.
+  // The rule is deliberately per-file: a file that links there has to know
+  // whether the page exists.
+  const finOffenders = [];
+  for (const file of files) {
+    const rel = relative(ROOT, file);
+    if (rel.startsWith('src/config/')) continue;
+    const body = stripComments(await readFile(file, 'utf8'));
+    const links = /(?:href|financingHref)=["'`]\/financing\b|["'`]\/financing["'`]/.test(body);
+    if (links && !/site\.financing/.test(body)) finOffenders.push(rel);
+  }
+  if (finOffenders.length) {
+    fail(
+      'Financing link is gated on the financing block',
+      `${finOffenders.join(', ')} — links to /financing without checking site.financing. ` +
+        'That page 404s whenever financing is null.',
+    );
+  } else {
+    pass('Financing link is gated on the financing block');
+  }
+
   // --- 4. Secrets are not in the repo -----------------------------
   for (const name of ['.env', '.dev.vars']) {
     if (existsSync(join(ROOT, name))) {

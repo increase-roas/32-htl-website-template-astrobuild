@@ -138,9 +138,11 @@ const productSchema =
             <a class="btn btn-gold btn-block" href={derived.telHref}>
               Call {derived.phoneDisplay}
             </a>
-            <a class="btn btn-navy btn-block" href="/financing">
-              Apply For Financing
-            </a>
+            {site.financing && (
+              <a class="btn btn-navy btn-block" href="/financing">
+                Apply For Financing
+              </a>
+            )}
           </div>
 
           {product!.quickFacts.length > 0 && (
