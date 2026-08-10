@@ -25,6 +25,8 @@ interface Env {
   // R2 public host for product images
   R2_PUBLIC_BUCKET_ID?: string;
   R2_PUBLIC_BASE_URL?: string;
+  /** Optional override of the 6 MB upload cap. */
+  MAX_PRODUCT_IMAGE_BYTES?: string;
 
   // CRM (Phase 8)
   GHL_API_KEY?: string;

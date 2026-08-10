@@ -8,3 +8,5 @@ dist/
 .DS_Store
 *.log
 clients/_previous.config.ts.bak
+.dev.vars
+.dev.vars.*

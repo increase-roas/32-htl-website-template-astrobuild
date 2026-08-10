@@ -157,6 +157,14 @@ const identitySchema = z.object({
   tagline: z.string().min(1),
   /** Production origin, no trailing slash. Drives canonical URLs + sitemap. */
   siteUrl: httpsUrl,
+  /**
+   * schema.org type for the business. A more specific type than
+   * LocalBusiness helps local search understand what the shop is, and it is
+   * a client fact — a spa dealer and a pool-supply store are not the same
+   * thing. Defaults so existing configs keep working untouched.
+   * See https://schema.org/LocalBusiness for the subtypes.
+   */
+  schemaType: z.string().min(1).default('HomeAndConstructionBusiness'),
 });
 
 const contactSchema = z.object({

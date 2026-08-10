@@ -11,7 +11,9 @@
  * same reason — every page gets it by construction, not by remembering.
  */
 import { site, derived } from '../config';
+import { buildLocalBusiness } from '../lib/seo';
 import BrandTokens from '../components/BrandTokens.astro';
+import JsonLd from '../components/JsonLd.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
@@ -22,14 +24,30 @@ interface Props {
   /** Path only, e.g. "/inventory". Canonical URL is derived from siteUrl. */
   path?: string;
   noindex?: boolean;
+  /** Page-specific share image. Falls back to the config default. */
+  ogImage?: string | null;
+  /** Extra structured data for this page type (Product, ItemList, …). */
+  jsonLd?: Record<string, unknown> | null;
 }
 
-const { title, description, path = Astro.url.pathname, noindex = false } = Astro.props;
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  noindex = false,
+  ogImage = null,
+  jsonLd = null,
+} = Astro.props;
 
 // Title and description fall back to config — never hand-typed per page.
 const pageTitle = title ? `${title} | ${site.identity.name}` : site.identity.name;
 const pageDescription = description ?? site.identity.tagline;
 const canonical = new URL(path, site.identity.siteUrl).href;
+const shareImage = new URL(ogImage ?? site.brand.logos.ogImage, site.identity.siteUrl).href;
+
+// Built here, once, for every page. The old build injected an incomplete
+// version at runtime and only on the homepage.
+const localBusiness = buildLocalBusiness();
 ---
 
 <!doctype html>
@@ -57,17 +75,40 @@ const canonical = new URL(path, site.identity.siteUrl).href;
       )
     }
 
+    <meta property="og:site_name" content={site.identity.name} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL(site.brand.logos.ogImage, site.identity.siteUrl).href} />
+    <meta property="og:image" content={shareImage} />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={shareImage} />
+
+    {/* Complete LocalBusiness on EVERY page, rendered server-side. */}
+    <JsonLd data={localBusiness} />
+    {/* Page-specific: Product on a detail page, ItemList on a listing. */}
+    <JsonLd data={jsonLd} />
 
     {/* Enables the .reveal transitions only when JS is present, so a no-JS
         visitor sees content rather than permanently-invisible sections. */}
     <script is:inline>
       document.documentElement.classList.add('js');
     </script>
+
+    {
+      /* Zaraz injects its own runtime at the Cloudflare edge — there is no
+         snippet to paste here, and no GTM container. All this does is make
+         sure `dataLayer` exists before any island pushes to it, so an event
+         fired before the tag runtime loads is queued rather than lost.
+         Enable Zaraz and add the Managed Components in the Cloudflare
+         dashboard; see the README for the trigger mapping. */
+      site.integrations.zaraz.enabled && (
+        <script is:inline>window.dataLayer = window.dataLayer || [];</script>
+      )
+    }
   </head>
   <body>
     {
