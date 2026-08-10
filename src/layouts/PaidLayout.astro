@@ -116,10 +116,13 @@ const { title, advertorialLabel } = Astro.props;
         height: 40px;
         width: auto;
       }
+      /*
+        No max-width here. Each section already constrains itself with .wrap;
+        constraining again nested the two and squeezed the hero into a column
+        about half the width it should be. One thing owns the measure.
+      */
       .lp-main {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 0 1.25rem;
+        width: 100%;
       }
       .lp-footer {
         margin-top: 3.5rem;
