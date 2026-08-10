@@ -16,3 +16,6 @@ clients/_previous.config.ts.bak
 
 # Intake layer: compiled copy of the template schema, rebuilt on every run.
 intake/.cache/
+
+# Scratch/quarantine — never tracked.
+_to_delete/
