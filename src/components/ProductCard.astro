@@ -17,15 +17,24 @@
  */
 import type { Product } from '../lib/db';
 import { assetOrWarn } from '../lib/assets';
+import { site } from '../config';
 import { formatPrice, formatMonthly, statusLabel, isMutedStatus, ASK_FOR_PRICE } from '../lib/format';
 
 interface Props {
   product: Product;
-  /** Financing destination. Falls back to the config nav entry. */
+  /** Override the financing destination. Rarely needed. */
   financingHref?: string;
 }
 
-const { product, financingHref = '/financing' } = Astro.props;
+/**
+ * The financing link used to default to '/financing' unconditionally, which
+ * meant every card on every listing page linked to a page that only exists
+ * when the client has configured financing. One config value now decides both
+ * whether the page exists and whether anything links to it — there is no way
+ * for the two to disagree.
+ */
+const { product, financingHref } = Astro.props;
+const financingLink = financingHref ?? (site.financing ? '/financing' : null);
 
 const image = assetOrWarn(product.primaryImage, `product "${product.slug}"`);
 const price = formatPrice(product.price);
@@ -98,7 +107,13 @@ const pills = product.quickFacts.length > 0 ? product.quickFacts.slice(0, 3) : f
         {muted ? 'View details' : 'See this unit'}
         <span class="inv-card-cta-arrow" aria-hidden="true">&#8594;</span>
       </a>
-      {!muted && <a class="inv-card-financing" href={financingHref}>Apply For Financing</a>}
+      {
+        !muted && financingLink && (
+          <a class="inv-card-financing" href={financingLink}>
+            Apply For Financing
+          </a>
+        )
+      }
     </div>
   </div>
 </article>

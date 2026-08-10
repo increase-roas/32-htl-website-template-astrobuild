@@ -12,8 +12,9 @@
  * page leaking into the index is quiet and expensive.
  */
 import PaidLayout from '../../layouts/PaidLayout.astro';
-import Sections from '../../components/lp/Sections.astro';
+import Render from '../../components/sections/Render.astro';
 import { findLanding } from '../../config/landings';
+import { collectFootnotes } from '../../config/sections.schema';
 
 // SSR, like every other dynamic route here. No getStaticPaths: the config
 // registry already knows every valid slug and anything else is a 404.
@@ -29,17 +30,11 @@ if (!lp) {
 const sourcePage = `/lp/${lp.slug}`;
 
 /** Numbered to match the <sup> markers the section renderer emits. */
-const footnotes = [
-  ...lp.sections.flatMap((s) => {
-    if (s.type === 'hero') return s.bullets.filter((b) => b.superlative).map((b) => b.footnote!);
-    if (s.type === 'bignumber' && s.claim?.superlative) return [s.claim.footnote!];
-    return [];
-  }),
-];
+const footnotes = collectFootnotes(lp.sections);
 ---
 
 <PaidLayout title={lp.title} advertorialLabel={lp.advertorialLabel}>
-  <Sections sections={lp.sections} sourcePage={sourcePage} category={lp.category} />
+  <Render sections={lp.sections} sourcePage={sourcePage} />
 
   <div slot="disclosures" class="lp-disclosures">
     {

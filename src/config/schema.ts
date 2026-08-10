@@ -16,6 +16,7 @@
 
 import { z } from 'zod';
 import { CATEGORY_SLUGS } from './categories';
+import { sectionSchema, collectFootnotes } from './sections.schema';
 
 /* ------------------------------------------------------------------ */
 /* Primitives                                                          */
@@ -285,6 +286,65 @@ const categoryOverrideSchema = z.object({
 });
 
 /* ------------------------------------------------------------------ */
+/* Financing — optional, and every word of it is a client fact         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Financing terms are client-specific AND regulated. A rate, a term length or
+ * an "approval" claim typed into a component would be both a duplicated fact
+ * and, if wrong, a Truth-in-Lending problem. So it lives here or nowhere.
+ *
+ * `null` means this client has no financing page. The route then 404s, and
+ * because the gate now crawls every nav link, a config that advertises
+ * /financing without configuring it FAILS THE GATE rather than shipping a
+ * dead nav item.
+ *
+ * `disclaimer` is required rather than optional on purpose: an offer stated
+ * without its qualifying terms is the claim regulators actually care about.
+ */
+const financingSchema = z.object({
+  headline: z.string().min(1),
+  blurb: z.string().min(1),
+  /** Plain statements. No invented rates — only what the client confirmed. */
+  bullets: z.array(z.string().min(1)).min(1),
+  /** Who actually underwrites it, if the client names them. */
+  lenderName: z.string().min(1).nullable().default(null),
+  /** External application link, if there is one. */
+  applyUrl: httpsUrl.nullable().default(null),
+  /** Qualifying terms. Required — see above. */
+  disclaimer: z.string().min(1),
+});
+
+/* ------------------------------------------------------------------ */
+/* Homepage — an ordered list of sections, not a file full of markup    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The homepage lives HERE, in the one config file, for the same reason
+ * everything else does: a second config file is a second place to look, and
+ * the whole point of this template is that there is one.
+ *
+ * A section carries COPY. It must never carry a fact that already exists
+ * above it — the phone number, address, opening hours, founding year and
+ * category list are read at render time. That is why nothing here states a
+ * years-in-business number: `yearsInBusiness` is derived from `foundedYear`
+ * and is correct every January without anyone remembering.
+ *
+ * Sections: announcement, hero, stats, offercard, categories, products,
+ * imagecards, benefits, gallery, reviews, comparison, promise, splitcards,
+ * steps, faq, ctaband, cta, trust, bignumber.
+ */
+const homepageSchema = z.object({
+  /** Overrides <title>. Null falls back to identity.tagline. */
+  title: z.string().min(1).nullable().default(null),
+  /** Overrides the meta description. Null falls back to identity.tagline. */
+  description: z.string().min(1).nullable().default(null),
+  sections: z.array(sectionSchema).default([]),
+  /** Footnotes and small print printed at the bottom of the page. */
+  disclosures: z.array(z.string().min(1)).default([]),
+});
+
+/* ------------------------------------------------------------------ */
 /* Integrations — NAMES and FLAGS only. Never secrets.                 */
 /* ------------------------------------------------------------------ */
 
@@ -339,6 +399,19 @@ export const clientConfigSchema = z
     categories: z.partialRecord(z.enum([...CATEGORY_SLUGS]), categoryOverrideSchema).default({}),
     /** Cities / areas served. Footer pills + schema areaServed. */
     serviceAreas: z.array(z.string().min(1)).default([]),
+    /** null = this client has no financing page. The route 404s. */
+    financing: financingSchema.nullable().default(null),
+    /**
+     * The homepage, as an ordered list of sections. An empty default means a
+     * config that predates this field still builds — it just has no homepage
+     * sections until someone adds them.
+     */
+    homepage: homepageSchema.default({
+      title: null,
+      description: null,
+      sections: [],
+      disclosures: [],
+    }),
     integrations: integrationsSchema,
   })
   .superRefine((cfg, ctx) => {
@@ -362,6 +435,44 @@ export const clientConfigSchema = z
           message: `Nav links to "${item.href}" but category "${catalogSlug}" is not enabled. Enable it or remove the link.`,
         });
       }
+    }
+
+    // The homepage must lead with a hero (an announcement bar may precede
+    // it). Anything else means the first thing a visitor sees is a mid-page
+    // block with no context above it.
+    const hp = cfg.homepage;
+    const first = hp.sections[0];
+    if (hp.sections.length > 0 && first && first.type !== 'hero' && first.type !== 'announcement') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homepage', 'sections', 0],
+        message: 'The homepage must start with a hero (an announcement bar may come first).',
+      });
+    }
+    // One announcement bar, at the top, or none.
+    const bars = hp.sections.map((s, i) => (s.type === 'announcement' ? i : -1)).filter((i) => i >= 0);
+    if (bars.length > 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homepage', 'sections'],
+        message: 'Only one announcement bar is allowed.',
+      });
+    }
+    if (bars.length === 1 && bars[0] !== 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homepage', 'sections', bars[0]!],
+        message: 'The announcement bar must be the first section.',
+      });
+    }
+    // A superlative needs somewhere for its substantiation to print.
+    if (collectFootnotes(hp.sections).length > 0 && hp.disclosures.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homepage', 'disclosures'],
+        message:
+          'The homepage makes a superlative claim but has no disclosures block to print the substantiation in.',
+      });
     }
 
     // A CLIENT config must sell something. The bare template legitimately

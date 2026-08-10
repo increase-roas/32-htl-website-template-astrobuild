@@ -92,22 +92,29 @@ export const landing: LandingInput = {
     },
 
     {
-      type: 'testimonials',
+      type: 'reviews',
       heading: 'EXAMPLE — what customers say',
       items: [
         {
           name: 'EXAMPLE — First name + last initial',
+          rating: 5,
           location: 'EXAMPLE — town',
           quote: 'EXAMPLE — a real quote, in their words, with a specific detail in it.',
           detail: 'EXAMPLE — the specific: what they bought, what they were worried about.',
+          source: null,
+          date: null,
         },
         {
           name: 'EXAMPLE — First name + last initial',
+          rating: 5,
           location: 'EXAMPLE — town',
           quote: 'EXAMPLE — second testimonial.',
           detail: null,
+          source: null,
+          date: null,
         },
       ],
+      aggregate: null,
     },
 
     {

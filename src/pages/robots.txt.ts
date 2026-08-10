@@ -16,6 +16,8 @@ export const GET: APIRoute = () => {
     '# Paid landing pages. Also noindex in the markup and absent from the',
     '# sitemap — three mechanisms, because a leaked LP is quiet and costly.',
     'Disallow: /lp/',
+    '# Internal config diagnostic. Never linked, noindex in the markup.',
+    'Disallow: /proof',
     'Allow: /',
     '',
     `Sitemap: ${new URL('/sitemap-index.xml', site.identity.siteUrl).href}`,

@@ -363,6 +363,12 @@ async function renderedChecks(m) {
     // Admin link in customer-facing output.
     if (/href=["'][^"']*\/admin/.test(html)) problems.admin.push(route);
 
+    // The config proof sheet is an internal diagnostic. Like /admin it is
+    // reachable by URL and must never be LINKED — a customer following a
+    // link to a page of colour swatches is the "works fine, shouldn't be
+    // there" defect.
+    if (/href=["'][^"']*\/proof/.test(html)) problems.admin.push(`${route} → /proof`);
+
     // Relative asset paths — the category-hero 404.
     const relSrc = [...html.matchAll(/(?:src|href)=["'](?!https?:|\/|#|data:|mailto:|tel:|sms:)([^"']+)["']/g)]
       .map((x) => x[1])
