@@ -10,3 +10,6 @@ dist/
 clients/_previous.config.ts.bak
 .dev.vars
 .dev.vars.*
+
+# Intake layer: compiled copy of the template schema, rebuilt on every run.
+intake/.cache/
