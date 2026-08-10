@@ -187,6 +187,19 @@ export const rawClientConfig: ClientConfigInput = {
   financing: null,
 
   /**
+   * DISPLAY — what a price is allowed to say.
+   *
+   * `showMonthly` is FALSE here because `financing` above is null. A monthly
+   * payment is a credit offer, and an offer with no lender and no disclaimer
+   * behind it is the claim that gets a client in trouble. Turning this on
+   * without a financing block FAILS THE BUILD, so the two cannot disagree.
+   */
+  display: {
+    showPrice: true,
+    showMonthly: false,
+  },
+
+  /**
    * HOMEPAGE — an ordered list of sections. Reorder the list, reorder the
    * page. Delete an entry, delete that section.
    *

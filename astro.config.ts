@@ -62,6 +62,13 @@ function gateManifest() {
             legalItems: site.nav.legalItems,
           },
           integrations: site.integrations,
+          /**
+           * Whether this client has configured financing at all, and what
+           * prices are allowed to say. The gate needs both to catch a
+           * monthly payment advertised with no terms behind it.
+           */
+          financingEnabled: site.financing !== null,
+          display: site.display,
           logos: site.brand.logos,
           /**
            * Public routes the gate should crawl.
