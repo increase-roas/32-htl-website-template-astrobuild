@@ -10,6 +10,9 @@
     "preview": "wrangler dev",
     "check": "astro check",
     "client:use": "node scripts/use-client.mjs",
+    "db:apply:local": "wrangler d1 execute DB --local --file=./db/schema.sql",
+    "db:apply:remote": "wrangler d1 execute DB --remote --file=./db/schema.sql",
+    "db:seed:local": "wrangler d1 execute DB --local --file=./db/seed.example.sql",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
