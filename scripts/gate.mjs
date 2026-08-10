@@ -30,16 +30,41 @@
 
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, dirname, relative, extname } from 'node:path';
+import { join, dirname, relative, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const MANIFEST = join(ROOT, 'dist', 'gate-manifest.json');
+/* ------------------------------------------------------------------ */
+/* CLI                                                                 */
+/* ------------------------------------------------------------------ */
 
-const args = new Set(process.argv.slice(2));
-const SKIP_RENDER = args.has('--no-render');
-const PORT = 4399;
+/**
+ * The gate has to be runnable against a tree that is NOT this repo.
+ *
+ * Every check in here claims to catch a defect. The only proof of that
+ * claim is reintroducing the defect and watching the gate fail — which
+ * means the harness needs to point the gate at a fixture directory with a
+ * manifest of its own, and read the result as data rather than as prose.
+ * Hence --root, --manifest, --source-only and --json. Nothing about a
+ * normal `npm run gate` changes: the defaults are what they always were.
+ */
+const argv = process.argv.slice(2);
+const flags = new Set(argv.filter((a) => !a.includes('=')));
+const valueOf = (name) => {
+  const hit = argv.find((a) => a.startsWith(`${name}=`));
+  return hit ? hit.slice(name.length + 1) : null;
+};
+
+const DEFAULT_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = resolve(valueOf('--root') ?? DEFAULT_ROOT);
+const MANIFEST = resolve(valueOf('--manifest') ?? join(ROOT, 'dist', 'gate-manifest.json'));
+
+/** Source + config checks only. No build, no server — what the harness runs. */
+const SOURCE_ONLY = flags.has('--source-only');
+const SKIP_RENDER = SOURCE_ONLY || flags.has('--no-render');
+/** Machine-readable results, so a test asserts WHICH check failed. */
+const JSON_OUT = flags.has('--json');
+const PORT = Number(valueOf('--port') ?? 4399);
 
 /* ------------------------------------------------------------------ */
 /* Reporting                                                           */
@@ -595,13 +620,17 @@ const EYEBALL = [
 ];
 
 async function main() {
-  console.log(`\n${C.bold}PRE-DEPLOY GATE${C.off}\n`);
+  if (!JSON_OUT) console.log(`\n${C.bold}PRE-DEPLOY GATE${C.off}\n`);
 
   if (!existsSync(MANIFEST)) {
-    console.error(
-      `${C.red}Cannot run: dist/gate-manifest.json is missing.${C.off}\n` +
-        `Run \`npm run build\` first — the gate checks what was built, not what is in source.\n`,
-    );
+    if (JSON_OUT) {
+      console.log(JSON.stringify({ crashed: true, reason: `manifest missing: ${MANIFEST}`, results: [] }));
+    } else {
+      console.error(
+        `${C.red}Cannot run: ${relative(ROOT, MANIFEST)} is missing.${C.off}\n` +
+          `Run \`npm run build\` first — the gate checks what was built, not what is in source.\n`,
+      );
+    }
     process.exit(1);
   }
 
@@ -611,7 +640,10 @@ async function main() {
   configChecks(manifest);
 
   let server = null;
-  if (SKIP_RENDER) {
+  if (SOURCE_ONLY) {
+    // Deliberately silent. The harness runs source checks in isolation on
+    // purpose; a warning there would fire in every single test.
+  } else if (SKIP_RENDER) {
     warn('Rendered checks skipped', '--no-render was passed. Half the gate did not run.');
   } else {
     try {
@@ -628,6 +660,11 @@ async function main() {
   const failures = results.filter((r) => r.level === 'FAIL');
   const warnings = results.filter((r) => r.level === 'WARN');
   const passes = results.filter((r) => r.level === 'PASS');
+
+  if (JSON_OUT) {
+    console.log(JSON.stringify({ crashed: false, results }));
+    process.exit(failures.length ? 1 : 0);
+  }
 
   for (const r of passes) {
     console.log(`  ${C.green}PASS${C.off}  ${r.check}${r.detail ? `  ${C.dim}${r.detail}${C.off}` : ''}`);
@@ -661,6 +698,10 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`\n${C.red}Gate crashed:${C.off}`, error);
+  if (JSON_OUT) {
+    console.log(JSON.stringify({ crashed: true, reason: String(error?.stack ?? error), results }));
+  } else {
+    console.error(`\n${C.red}Gate crashed:${C.off}`, error);
+  }
   process.exit(1);
 });

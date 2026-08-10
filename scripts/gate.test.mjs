@@ -1,0 +1,230 @@
+#!/usr/bin/env node
+/**
+ * THE GATE, TESTED.
+ *
+ *   npm run gate:test
+ *
+ * A check that has never been watched to FAIL is not a check. Every defect
+ * the gate claims to catch is reintroduced here, in a throwaway copy of the
+ * tree, and the gate is run against it. A test passes only when:
+ *
+ *   1. the fixture WITH the defect makes the gate exit non-zero, naming the
+ *      right check, and
+ *   2. the same fixture WITHOUT the defect makes that check pass.
+ *
+ * Both halves matter. A check that fails on everything is as useless as one
+ * that fails on nothing, and only the second half tells them apart.
+ *
+ * Fixtures are real directories, not mocks. The gate reads files; so does
+ * this. Anything stubbed here is a hole in exactly the way the holes this
+ * suite exists to close were holes.
+ */
+
+import { mkdtemp, cp, rm, writeFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const GATE = join(ROOT, 'scripts', 'gate.mjs');
+
+const C = process.stdout.isTTY
+  ? { red: '\x1b[31m', yellow: '\x1b[33m', green: '\x1b[32m', dim: '\x1b[2m', bold: '\x1b[1m', off: '\x1b[0m' }
+  : { red: '', yellow: '', green: '', dim: '', bold: '', off: '' };
+
+/* ------------------------------------------------------------------ */
+/* Fixtures                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A manifest that passes every config check. A test breaks exactly ONE
+ * thing, so a failure names one cause rather than a pile of them.
+ */
+export function cleanManifest(overrides = {}) {
+  return {
+    generatedAt: new Date(0).toISOString(),
+    deployMode: 'client',
+    identity: { name: 'Fixture Spas', siteUrl: 'https://fixture-spas.test', foundedYear: 1998 },
+    contact: { phone: '+16195550142', email: 'hello@fixture-spas.test' },
+    address: {
+      street: '1200 Harbor Way',
+      city: 'San Diego',
+      postalCode: '92101',
+      latitude: 32.7157,
+      longitude: -117.1611,
+    },
+    hoursCount: 6,
+    sameAs: ['https://www.facebook.com/fixturespas'],
+    serviceAreas: ['San Diego'],
+    categories: [{ slug: 'hot-tub', segment: 'hot-tubs', href: '/hot-tubs', label: 'Hot Tubs' }],
+    nav: {
+      header: [
+        { label: 'Hot Tubs', href: '/hot-tubs' },
+        { label: 'Inventory', href: '/inventory' },
+      ],
+      footer: [{ label: 'Inventory', href: '/inventory' }],
+      primaryCta: { label: 'Shop Inventory', href: '/inventory' },
+      legalItems: [{ label: 'Privacy Policy', href: '/privacy-policy' }],
+    },
+    integrations: {},
+    logos: {
+      nav: '/brand/logo-nav.svg',
+      footer: '/brand/logo-footer.svg',
+      inventory: null,
+      favicon: '/brand/favicon.svg',
+      ogImage: '/brand/og-default.png',
+    },
+    routes: ['/', '/inventory', '/hot-tubs', '/404'],
+    landingRoutes: [],
+    landingLabels: [],
+    landingExitHrefs: [],
+    ...overrides,
+  };
+}
+
+/**
+ * Copies the real `src/` into a temp root, hands it to `mutate` so a test can
+ * reintroduce a defect, writes the manifest, runs the gate, deletes the copy.
+ *
+ * The copy is of the REAL source on purpose: a hand-written mini-tree would
+ * drift from the thing being checked, and a check that passes on a fixture
+ * nobody ships is not evidence about the template.
+ */
+export async function withFixture(mutate, manifest = cleanManifest()) {
+  const dir = await mkdtemp(join(tmpdir(), 'gate-fixture-'));
+  try {
+    await cp(join(ROOT, 'src'), join(dir, 'src'), { recursive: true });
+    await mkdir(join(dir, 'dist'), { recursive: true });
+    const manifestPath = join(dir, 'dist', 'gate-manifest.json');
+    if (mutate) await mutate({ dir, manifest });
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+    return runGate({ root: dir, manifest: manifestPath });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/** Runs the gate in source-only mode and returns its results as data. */
+export function runGate({ root, manifest }) {
+  const proc = spawnSync(
+    process.execPath,
+    [GATE, '--source-only', '--json', `--root=${root}`, `--manifest=${manifest}`],
+    { encoding: 'utf8' },
+  );
+  let parsed;
+  try {
+    parsed = JSON.parse(proc.stdout.trim().split('\n').pop() ?? '{}');
+  } catch {
+    parsed = { crashed: true, reason: `unparseable output: ${proc.stdout}${proc.stderr}`, results: [] };
+  }
+  return { code: proc.status, ...parsed };
+}
+
+/* ------------------------------------------------------------------ */
+/* Assertions                                                          */
+/* ------------------------------------------------------------------ */
+
+const find = (run, check) => run.results?.find((r) => r.check === check);
+
+export function assertFails(run, check) {
+  if (run.crashed) throw new Error(`gate crashed instead of failing: ${run.reason}`);
+  const hit = find(run, check);
+  if (!hit) throw new Error(`check "${check}" did not run at all`);
+  if (hit.level !== 'FAIL') throw new Error(`check "${check}" reported ${hit.level}, expected FAIL`);
+  if (run.code === 0) throw new Error(`check "${check}" failed but the gate still exited 0`);
+}
+
+export function assertPasses(run, check) {
+  if (run.crashed) throw new Error(`gate crashed: ${run.reason}`);
+  const hit = find(run, check);
+  if (!hit) throw new Error(`check "${check}" did not run at all`);
+  if (hit.level === 'FAIL') throw new Error(`check "${check}" failed on a clean fixture: ${hit.detail}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Runner                                                             */
+/* ------------------------------------------------------------------ */
+
+const cases = [];
+export const test = (name, fn) => cases.push({ name, fn });
+/**
+ * A check with no test yet. Listed rather than omitted: an untested check is
+ * a known hole, and a hole nobody can see is the thing this file exists to
+ * prevent. Batch 3 empties this list.
+ */
+export const pending = (name, why) => cases.push({ name, why });
+
+/* ------------------------------------------------------------------ */
+/* The checks                                                          */
+/* ------------------------------------------------------------------ */
+
+pending('No brand colour literals outside src/config', 'work order item 7 + 8');
+pending('No category slugs hardcoded outside src/config', 'work order item 20');
+pending('No /admin link in any component', 'work order item 20');
+pending('Autocomplete on island form fields', 'work order item 17');
+pending('No credentials committed in source', 'work order item 20');
+pending('Config is in client mode', 'work order item 20');
+pending('No placeholder facts', 'work order item 20');
+pending('At least one category enabled', 'work order item 20');
+pending('Opening hours set', 'work order item 20');
+pending('One label per destination', 'work order item 20');
+pending('No /admin link in rendered pages', 'work order items 12 + 16 — needs a built fixture');
+pending('No relative asset paths', 'work order item 12 — needs a built fixture');
+pending('No dead href="#"', 'work order item 12 — needs a built fixture');
+pending('Every phone is a tel: link', 'work order items 9 + 10');
+pending('Logo present, light and knockout', 'work order item 11');
+pending('Mobile menu present and wired', 'work order item 12 — needs a built fixture');
+pending('Complete LocalBusiness on every page', 'work order item 12 — needs a built fixture');
+pending('Autocomplete on every PII field', 'work order item 17');
+pending('Sitemap excludes admin and disabled categories', 'work order item 19');
+
+/* ------------------------------------------------------------------ */
+/* Main                                                                */
+/* ------------------------------------------------------------------ */
+
+async function main() {
+  console.log(`\n${C.bold}GATE TESTS THE GATE${C.off}\n`);
+
+  let passed = 0;
+  let failed = 0;
+  let waiting = 0;
+
+  for (const c of cases) {
+    if (!c.fn) {
+      waiting += 1;
+      console.log(`  ${C.yellow}TODO${C.off}  ${c.name}  ${C.dim}${c.why}${C.off}`);
+      continue;
+    }
+    try {
+      await c.fn();
+      passed += 1;
+      console.log(`  ${C.green}PASS${C.off}  ${c.name}`);
+    } catch (error) {
+      failed += 1;
+      console.log(`  ${C.red}FAIL${C.off}  ${c.name}\n        ${error.message}`);
+    }
+  }
+
+  console.log(
+    `\n  ${passed} passed · ${C.yellow}${waiting} untested${C.off} · ${failed ? C.red : ''}${failed} failed${C.off}\n`,
+  );
+
+  if (waiting) {
+    console.log(
+      `${C.dim}Untested checks are holes. Each one is a check that claims to catch a defect\n` +
+        `and has never been watched to do it.${C.off}\n`,
+    );
+  }
+
+  process.exit(failed ? 1 : 0);
+}
+
+// Only when run directly. The helpers above are importable so a fixture can
+// be driven from a scratch script without the whole suite firing.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((error) => {
+    console.error(`\n${C.red}Harness crashed:${C.off}`, error);
+    process.exit(1);
+  });
+}
