@@ -37,6 +37,19 @@ interface Env {
   META_CAPI_ACCESS_TOKEN?: string;
   META_TEST_EVENT_CODE?: string;
 
+  /**
+   * Conversion value ladder. Commercial figures, so they are secrets per
+   * client rather than config — see src/lib/capi-events.ts for why Lead is
+   * 0 and why Purchase has no default at all.
+   */
+  META_VALUE_LEAD?: string;
+  META_VALUE_QUALIFIED?: string;
+  META_VALUE_SCHEDULE?: string;
+  META_VALUE_SHOWED?: string;
+
+  /** Bearer token the CRM presents to POST /api/lead-stage. */
+  STAGE_WEBHOOK_SECRET?: string;
+
   // Monitoring
   PUBLIC_SENTRY_DSN?: string;
 }

@@ -174,22 +174,6 @@ CREATE TABLE IF NOT EXISTS lead_events (
 CREATE INDEX IF NOT EXISTS idx_events_lead  ON lead_events(lead_uuid);
 CREATE INDEX IF NOT EXISTS idx_events_id    ON lead_events(event_id);
 
--- One pipeline-stage event per lead, ever.
---
--- CRM webhooks retry. Without this index, one booked appointment
--- retried three times is three Schedule events at $300 each, and the
--- bidding algorithm is told this lead was worth $900. The index makes
--- the second write fail, and /api/lead-stage treats that failure as
--- success so the CRM stops retrying.
---
--- PARTIAL, excluding 'Lead', on purpose: a visitor who submits the form
--- twice legitimately produces two Lead rows, each with its own
--- browser-generated event_id. Constraining those would break the
--- website's own dedup pairing.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_events_stage_once
-  ON lead_events(lead_uuid, event_name)
-  WHERE event_name <> 'Lead';
-
 
 -- ------------------------------------------------------------
 -- admin_sessions — server-side session tokens for /admin.

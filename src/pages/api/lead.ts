@@ -21,6 +21,7 @@ import { site, derived } from '../../config';
 import { getEnv } from '../../lib/admin-auth';
 import { sendMetaCapi, deriveFbc, type CapiResult } from '../../lib/meta-capi';
 import { syncToGhl, buildGhlTags, type GhlResult } from '../../lib/ghl';
+import { resolveEventValue } from '../../lib/capi-events';
 
 export const prerender = false;
 
@@ -194,6 +195,11 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
     const categoryLabel =
       derived.enabledCategories.find((c) => c.slug === category)?.label ?? category;
 
+    // Bottom rung of the value ladder. Resolves to 0 unless a client has
+    // deliberately overridden META_VALUE_LEAD.
+    const leadValueResult = resolveEventValue('Lead', e as unknown as Record<string, string | undefined>);
+    const leadValue = leadValueResult.ok ? leadValueResult.value : 0;
+
     const [ghlResult, capiResult] = await Promise.all([
       ghlEnabled
         ? syncToGhl(
@@ -242,6 +248,7 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
               // The SAME id the browser will send. This is the dedup.
               eventId,
               eventSourceUrl,
+              actionSource: 'website',
               user: {
                 email,
                 phone,
@@ -259,6 +266,10 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
                 content_category: categoryLabel,
                 content_name: productSlug,
                 currency: 'USD',
+                // 0 by default, and that is the point: a form fill is worth
+                // nothing until a human qualifies it. The value that teaches
+                // Meta anything arrives later, from /api/lead-stage.
+                value: leadValue,
               },
             },
           )

@@ -37,6 +37,17 @@ export interface CapiEvent {
   /** THE dedup key. Must match what the browser sent. */
   eventId: string;
   eventSourceUrl: string;
+  /**
+   * Where the conversion happened. 'website' for anything a browser did;
+   * 'system_generated' for a CRM stage change reported after the fact.
+   * Defaults to 'website' so every existing caller behaves exactly as before.
+   */
+  actionSource?: 'website' | 'system_generated';
+  /**
+   * Unix SECONDS. Defaults to now. Set it when reporting something that
+   * happened earlier — Meta rejects events older than seven days.
+   */
+  eventTime?: number;
   user: CapiUserData;
   custom?: Record<string, unknown>;
 }
@@ -106,9 +117,9 @@ export async function sendMetaCapi(
     data: [
       compact({
         event_name: event.eventName,
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: event.eventTime ?? Math.floor(Date.now() / 1000),
         event_id: event.eventId,
-        action_source: 'website',
+        action_source: event.actionSource ?? 'website',
         event_source_url: event.eventSourceUrl,
         user_data: userData,
         custom_data: event.custom ? compact(event.custom) : undefined,
