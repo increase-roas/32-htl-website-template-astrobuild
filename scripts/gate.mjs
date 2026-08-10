@@ -109,7 +109,23 @@ async function sourceChecks() {
   const files = await walk(join(ROOT, 'src'));
 
   // --- 1. No colour literals outside the config -------------------
-  const hexOffenders = [];
+  //
+  // Two survivors, and only these two: the neutral stops of the image
+  // placeholder gradient. They are MATERIAL, not brand — the grey behind a
+  // missing photo is chrome no client will ever tune, and tokenizing them
+  // would add two config fields nobody would ever fill in. Everything else
+  // in the tree is brand and belongs in config. Do not add a third entry
+  // here without writing down why it is material.
+  const ALLOWED = new Set(['#eef2f8', '#e2e9f4']);
+
+  // Longest alternative first. #RRGGBBAA must be consumed whole: with only
+  // {6}|{3}, "#e8a40080" matched NOTHING — after "#e8a400" comes "8", a word
+  // character, so \b never fired, and "#e8a" failed the same way. An alpha
+  // variant of a brand colour was completely invisible to this check.
+  const HEX = /#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g;
+
+  const colourOffenders = [];
+  let colourCount = 0;
   for (const file of files) {
     const rel = relative(ROOT, file);
     if (rel.startsWith('src/config/')) continue;
@@ -120,17 +136,27 @@ async function sourceChecks() {
     if (rel.startsWith('src/pages/admin/')) continue;
     const body = stripComments(await readFile(file, 'utf8'));
     for (const [i, line] of body.split('\n').entries()) {
-      // Ignore the neutral greys of the image placeholder gradient and the
-      // graphite "sold" pill, which are material, not brand.
-      const matches = line.match(/#[0-9a-fA-F]{6}\b/g);
-      if (!matches) continue;
-      const ALLOWED = new Set(['#eef2f8', '#e2e9f4', '#2a3244', '#d9a50e', '#b98200', '#12603a']);
-      const bad = matches.filter((m) => !ALLOWED.has(m.toLowerCase()));
-      if (bad.length) hexOffenders.push(`${rel}:${i + 1} ${bad.join(' ')}`);
+      const bad = (line.match(HEX) ?? []).filter((m) => !ALLOWED.has(m.toLowerCase()));
+      // Numeric arguments only. rgb(var(--brand-deep-rgb) / .5) is the
+      // CORRECT form and appears throughout theme.css — [^)]* stops at the
+      // ")" of var(), so the token form never starts with a digit and is
+      // filtered out here rather than reported.
+      const calls = line.match(/(?:rgba?|hsla?)\([^)]*\)/g) ?? [];
+      bad.push(...calls.filter((c) => /^(?:rgba?|hsla?)\(\s*[0-9]/.test(c)));
+      if (!bad.length) continue;
+      colourCount += bad.length;
+      colourOffenders.push(`${rel}:${i + 1} ${bad.join(' ')}`);
     }
   }
-  if (hexOffenders.length) {
-    fail('No brand colour literals outside src/config', hexOffenders.slice(0, 8).join('\n      '));
+  if (colourOffenders.length) {
+    const shown = colourOffenders.slice(0, 8).join('\n      ');
+    const rest = colourOffenders.length - 8;
+    fail(
+      'No brand colour literals outside src/config',
+      rest > 0
+        ? `${colourCount} literals on ${colourOffenders.length} lines\n      ${shown}\n      … and ${rest} more lines`
+        : shown,
+    );
   } else {
     pass('No brand colour literals outside src/config');
   }

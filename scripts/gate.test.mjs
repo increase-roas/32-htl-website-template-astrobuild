@@ -240,7 +240,63 @@ test('PASSES when the Offer takes its price from pricingFor()', async () => {
   assertPasses(run, 'Structured data prices go through pricingFor()');
 });
 
-pending('No brand colour literals outside src/config', 'work order item 7 + 8');
+/**
+ * These fixtures REPLACE the copied tree instead of mutating it.
+ *
+ * Every other test here mutates real src/ because the defect it restores is
+ * the only one of its kind in the tree. This check is different: src/ still
+ * holds ~55 colour literals until Batch 1 finishes, so against the real tree
+ * assertFails would succeed with the mutation removed — and a test that
+ * passes without its own defect is not a test. The mutate callback runs after
+ * the copy and before the gate, so it can put a synthetic tree there instead.
+ *
+ * Other source checks see a one-file tree and find nothing to report, so the
+ * colour check is the only thing that can fail here. When the sweep lands,
+ * the clean-tree half of the pair joins them: assertPasses(withFixture(null)).
+ */
+const COLOUR = 'No brand colour literals outside src/config';
+const onlyStyles = (css) => async ({ dir }) => {
+  await rm(join(dir, 'src'), { recursive: true, force: true });
+  await mkdir(join(dir, 'src', 'styles'), { recursive: true });
+  await writeFile(join(dir, 'src', 'styles', 'theme.css'), css);
+};
+
+test('FAILS on a 3-digit hex', async () => {
+  assertFails(await withFixture(onlyStyles('.a{color:#fff}')), COLOUR);
+});
+
+/**
+ * The alpha variant a client would reach for. Invisible to the old regex:
+ * \b never fires after "#e8a400" when the next character is "8".
+ */
+test('FAILS on an 8-digit hex', async () => {
+  assertFails(await withFixture(onlyStyles('.a{color:#e8a40080}')), COLOUR);
+});
+
+test('FAILS on a numeric rgb()', async () => {
+  assertFails(await withFixture(onlyStyles('.a{border-color:rgb(255 255 255 / .3)}')), COLOUR);
+});
+
+test('FAILS on a numeric rgba()', async () => {
+  assertFails(await withFixture(onlyStyles('.a{box-shadow:0 0 4px rgba(0, 0, 0, .35)}')), COLOUR);
+});
+
+/** Zero hsl() in the tree today. The check is silent the day someone writes one. */
+test('FAILS on a numeric hsl()', async () => {
+  assertFails(await withFixture(onlyStyles('.a{color:hsl(210 88% 35%)}')), COLOUR);
+});
+
+/**
+ * The false-positive guard. This is the form the whole template is being
+ * moved TO; a check that flagged it would make the sweep impossible.
+ */
+test('PASSES on rgb(var(--brand-x-rgb) / a)', async () => {
+  assertPasses(await withFixture(onlyStyles('.a{box-shadow:0 0 4px rgb(var(--brand-deep-rgb) / .5)}')), COLOUR);
+});
+
+test('PASSES on the two whitelisted material neutrals', async () => {
+  assertPasses(await withFixture(onlyStyles('.a{background:linear-gradient(155deg,#eef2f8,#e2e9f4)}')), COLOUR);
+});
 pending('No category slugs hardcoded outside src/config', 'work order item 20');
 pending('No /admin link in any component', 'work order item 20');
 pending('Autocomplete on island form fields', 'work order item 17');
