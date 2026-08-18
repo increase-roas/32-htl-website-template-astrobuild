@@ -3,10 +3,9 @@
    Gradient stops, shadow values, easing curves and animation
    timings are lifted verbatim from the live site.
 
-   The ONE difference from the original: not one colour literal.
-   Every value reads a --brand-* custom property that
-   <BrandTokens /> writes from client.config.ts, including the
-   alpha variants via rgb(var(--brand-*-rgb) / a).
+   Brand colours read --brand-* custom properties that <BrandTokens />
+   writes from client.config.ts. Fixed white/black light and shadow values
+   are material/accessibility neutrals, not client palette choices.
 
    Change the config, and the same design system renders in a
    different palette. Do not add a hex code to this file.

@@ -88,7 +88,7 @@ src/components/Header.astro The ONE header. Contains the drawer AND its script.
 src/components/Footer.astro The ONE footer. Contains no admin markup at all.
 src/components/SocialIcon.astro   Glyph lookup, keyed by config social names.
 src/layouts/BaseLayout.astro      Mounts Header + Footer for every page.
-src/styles/theme.css        Exact port of the live design system. Zero hex codes.
+src/styles/theme.css        Live design system. Brand palette via tokens; fixed neutrals documented.
 src/styles/global.css       Tailwind token bridge. Zero hex codes.
 src/lib/db.ts               The ONLY way products are read. Filters by config.
 src/lib/seo.ts              Every schema.org object. Pages never hand-write JSON-LD.
@@ -118,7 +118,7 @@ These are not conventions to remember — the build fails if they are violated.
 | Every phone is a `tel:` link | Config stores one E.164 number; the display string and `tel:` href are both derived. There is no way to render a phone as plain text |
 | Categories are opt-in | Absent from config = OFF. Everything that lists categories iterates one array |
 | No nav link to a disabled category | Schema cross-check fails the build |
-| Colours are config values | `global.css` and every component contain no hex codes |
+| Brand colours are config values | Coloured literals fail the gate; only documented accessibility/material neutrals are allow-listed |
 | Complete geo for schema.org | Latitude and longitude are required fields, not optional |
 | Map is never blank | Derived from the address — there is no `mapEmbedUrl` field to leave empty |
 | Social icons and `sameAs` agree | Both read the same derived list |

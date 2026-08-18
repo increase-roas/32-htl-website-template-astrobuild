@@ -35,7 +35,7 @@ not typed by hand. It is read out of `src/config/schema.ts` at build time.
 ```
 intake/
   build-manifest.mjs      reads src/config/schema.ts → writes field-manifest.json
-  field-manifest.json     GENERATED. 83 fields, every constraint, every default.
+  field-manifest.json     GENERATED. 95 fields, every constraint, every default.
   validate.mjs            the proof: examples validate, guardrails still bite
   policy/
     field-policy.mjs      the ONLY hand-written list: ask / default / fixed / composed
@@ -84,16 +84,16 @@ cannot quietly fall behind it.
 
 ## The four field sources
 
-Every one of the 83 fields is classified in `policy/field-policy.mjs`:
+Every one of the 95 fields is classified in `policy/field-policy.mjs`:
 
 | source | count | meaning |
 |---|---|---|
-| `ask` | 38 | the form asks the client |
-| `default` | 36 | pre-filled (navy + gold brand, fonts, radii); client may override |
+| `ask` | 44 | the form asks the client |
+| `default` | 40 | pre-filled (navy + gold brand, fonts, radii); client may override |
 | `fixed` | 3 | the generator always writes it; the form never shows it |
-| `composed` | 6 | built from other answers, never typed directly |
+| `composed` | 8 | built from other answers, never typed directly |
 
-The 36 defaults are mostly the brand ramp — 21 colours, 4 font values, 3 radii.
+The 40 defaults are mostly the brand ramp — 21 colours, 4 font values, 3 radii.
 That is deliberate: a new client gets a complete, working look on submission and
 overrides only what they want to change.
 

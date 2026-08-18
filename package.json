@@ -15,6 +15,7 @@
     "db:seed:local": "wrangler d1 execute DB --local --file=./db/seed.example.sql",
     "gate": "node scripts/gate.mjs",
     "gate:fast": "node scripts/gate.mjs --no-render",
+    "gate:template": "node scripts/template-gate.mjs",
     "gate:test": "node scripts/gate.test.mjs",
     "deploy": "npm run build && npm run gate && wrangler deploy"
   },

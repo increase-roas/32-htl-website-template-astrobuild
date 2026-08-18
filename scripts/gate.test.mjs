@@ -251,8 +251,9 @@ test('PASSES when the Offer takes its price from pricingFor()', async () => {
  * the copy and before the gate, so it can put a synthetic tree there instead.
  *
  * Other source checks see a one-file tree and find nothing to report, so the
- * colour check is the only thing that can fail here. When the sweep lands,
- * the clean-tree half of the pair joins them: assertPasses(withFixture(null)).
+ * colour check is the only thing that can fail here. Synthetic fixtures also
+ * keep deliberate material-neutral exceptions from masking the introduced
+ * coloured literal.
  */
 const COLOUR = 'No brand colour literals outside src/config';
 const onlyStyles = (css) => async ({ dir }) => {
@@ -262,7 +263,7 @@ const onlyStyles = (css) => async ({ dir }) => {
 };
 
 test('FAILS on a 3-digit hex', async () => {
-  assertFails(await withFixture(onlyStyles('.a{color:#fff}')), COLOUR);
+  assertFails(await withFixture(onlyStyles('.a{color:#abc}')), COLOUR);
 });
 
 /**
@@ -273,12 +274,12 @@ test('FAILS on an 8-digit hex', async () => {
   assertFails(await withFixture(onlyStyles('.a{color:#e8a40080}')), COLOUR);
 });
 
-test('FAILS on a numeric rgb()', async () => {
-  assertFails(await withFixture(onlyStyles('.a{border-color:rgb(255 255 255 / .3)}')), COLOUR);
+test('FAILS on a coloured numeric rgb()', async () => {
+  assertFails(await withFixture(onlyStyles('.a{border-color:rgb(22 70 155 / .3)}')), COLOUR);
 });
 
-test('FAILS on a numeric rgba()', async () => {
-  assertFails(await withFixture(onlyStyles('.a{box-shadow:0 0 4px rgba(0, 0, 0, .35)}')), COLOUR);
+test('FAILS on a coloured numeric rgba()', async () => {
+  assertFails(await withFixture(onlyStyles('.a{box-shadow:0 0 4px rgba(22, 70, 155, .35)}')), COLOUR);
 });
 
 /** Zero hsl() in the tree today. The check is silent the day someone writes one. */
@@ -294,16 +295,50 @@ test('PASSES on rgb(var(--brand-x-rgb) / a)', async () => {
   assertPasses(await withFixture(onlyStyles('.a{box-shadow:0 0 4px rgb(var(--brand-deep-rgb) / .5)}')), COLOUR);
 });
 
-test('PASSES on the two whitelisted material neutrals', async () => {
+test('PASSES on fixed white and black material neutrals', async () => {
+  assertPasses(
+    await withFixture(
+      onlyStyles('.a{color:#fff;background:rgb(255 255 255 / .5);box-shadow:0 1px 3px rgba(0,0,0,.35)}'),
+    ),
+    COLOUR,
+  );
+});
+
+test('PASSES on the image-placeholder material neutrals', async () => {
   assertPasses(await withFixture(onlyStyles('.a{background:linear-gradient(155deg,#eef2f8,#e2e9f4)}')), COLOUR);
 });
+
+test('FAILS when config remains in template mode', async () => {
+  assertFails(await withFixture(null, cleanManifest({ deployMode: 'template' })), 'Config is not in client mode');
+});
+
+test('PASSES client mode on an approved fixture', async () => {
+  assertPasses(await withFixture(null), 'Config is in client mode');
+});
+
+test('FAILS on placeholder client facts', async () => {
+  assertFails(
+    await withFixture(null, cleanManifest({ identity: { name: 'CLIENT NAME HERE', siteUrl: 'https://example.com' } })),
+    'No placeholder facts',
+  );
+});
+
+test('PASSES when client facts contain no known placeholders', async () => {
+  assertPasses(await withFixture(null), 'No placeholder facts');
+});
+
+test('FAILS when no product category is enabled', async () => {
+  assertFails(await withFixture(null, cleanManifest({ categories: [] })), 'At least one category enabled');
+});
+
+test('PASSES when at least one product category is enabled', async () => {
+  assertPasses(await withFixture(null), 'At least one category enabled');
+});
+
 pending('No category slugs hardcoded outside src/config', 'work order item 20');
 pending('No /admin link in any component', 'work order item 20');
 pending('Autocomplete on island form fields', 'work order item 17');
 pending('No credentials committed in source', 'work order item 20');
-pending('Config is in client mode', 'work order item 20');
-pending('No placeholder facts', 'work order item 20');
-pending('At least one category enabled', 'work order item 20');
 pending('Opening hours set', 'work order item 20');
 pending('One label per destination', 'work order item 20');
 pending('No /admin link in rendered pages', 'work order items 12 + 16 — needs a built fixture');
