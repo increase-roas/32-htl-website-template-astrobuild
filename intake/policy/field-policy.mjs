@@ -462,6 +462,24 @@ export const FIELD_POLICY = {
     example: null,
   },
 
+  /* ---------------- price display ---------------- */
+  'display.showPrice': {
+    source: 'default',
+    group: 'financing',
+    control: 'checkbox',
+    label: 'Show cash prices',
+    help: 'Defaults on. Product status still decides whether an individual price may be shown.',
+    example: true,
+  },
+  'display.showMonthly': {
+    source: 'default',
+    group: 'financing',
+    control: 'checkbox',
+    label: 'Show monthly payments',
+    help: 'Defaults off. The schema refuses to enable this unless complete financing terms are configured.',
+    example: false,
+  },
+
   /* ---------------- integrations ---------------- */
   'integrations.d1BindingName': { source: 'fixed', group: 'integrations', label: 'D1 binding name', help: 'Always DB. Set in wrangler.toml at deploy time.', example: 'DB' },
   'integrations.r2BindingName': { source: 'fixed', group: 'integrations', label: 'R2 binding name', help: 'Always PRODUCT_IMAGES.', example: 'PRODUCT_IMAGES' },

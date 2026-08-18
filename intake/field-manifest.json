@@ -70,9 +70,9 @@
     }
   ],
   "counts": {
-    "total": 93,
+    "total": 95,
     "ask": 44,
-    "default": 38,
+    "default": 40,
     "fixed": 3,
     "composed": 8
   },
@@ -1443,6 +1443,32 @@
       "help": "REQUIRED if financing is offered. The qualifying terms — \"on approved credit\", who the offer applies to, what expires when. An offer stated without its terms is the claim regulators care about.",
       "control": "textarea",
       "example": null
+    },
+    {
+      "path": "display.showPrice",
+      "type": "boolean",
+      "required": false,
+      "nullable": false,
+      "default": true,
+      "source": "default",
+      "group": "financing",
+      "label": "Show cash prices",
+      "help": "Defaults on. Product status still decides whether an individual price may be shown.",
+      "control": "checkbox",
+      "example": true
+    },
+    {
+      "path": "display.showMonthly",
+      "type": "boolean",
+      "required": false,
+      "nullable": false,
+      "default": false,
+      "source": "default",
+      "group": "financing",
+      "label": "Show monthly payments",
+      "help": "Defaults off. The schema refuses to enable this unless complete financing terms are configured.",
+      "control": "checkbox",
+      "example": false
     },
     {
       "path": "homepage.title",

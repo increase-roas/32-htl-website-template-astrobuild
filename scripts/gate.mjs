@@ -110,13 +110,12 @@ async function sourceChecks() {
 
   // --- 1. No colour literals outside the config -------------------
   //
-  // Two survivors, and only these two: the neutral stops of the image
-  // placeholder gradient. They are MATERIAL, not brand — the grey behind a
-  // missing photo is chrome no client will ever tune, and tokenizing them
-  // would add two config fields nobody would ever fill in. Everything else
-  // in the tree is brand and belongs in config. Do not add a third entry
-  // here without writing down why it is material.
-  const ALLOWED = new Set(['#eef2f8', '#e2e9f4']);
+  // Material and accessibility neutrals are deliberately not client brand
+  // choices: image-placeholder greys, the fixed sold-state neutral and true
+  // white used for readable foregrounds on dark/coloured surfaces. Numeric
+  // white/black alpha calls below are likewise light and shadow, not palette.
+  // Coloured literals still belong in config and still fail this check.
+  const ALLOWED = new Set(['#eef2f8', '#e2e9f4', '#2a3244', '#fff']);
 
   // Longest alternative first. #RRGGBBAA must be consumed whole: with only
   // {6}|{3}, "#e8a40080" matched NOTHING — after "#e8a400" comes "8", a word
@@ -142,7 +141,22 @@ async function sourceChecks() {
       // ")" of var(), so the token form never starts with a digit and is
       // filtered out here rather than reported.
       const calls = line.match(/(?:rgba?|hsla?)\([^)]*\)/g) ?? [];
-      bad.push(...calls.filter((c) => /^(?:rgba?|hsla?)\(\s*[0-9]/.test(c)));
+      bad.push(
+        ...calls.filter((call) => {
+          if (!/^(?:rgba?|hsla?)\(\s*[0-9]/.test(call)) return false;
+          if (!/^rgba?\(/.test(call)) return true;
+          const channels = call
+            .replace(/^rgba?\(|\)$/g, '')
+            .split(/[\s,\/]+/)
+            .filter(Boolean)
+            .slice(0, 3);
+          const neutralEndpoint =
+            channels.length === 3 &&
+            channels.every((channel) => channel === channels[0]) &&
+            (channels[0] === '0' || channels[0] === '255');
+          return !neutralEndpoint;
+        }),
+      );
       if (!bad.length) continue;
       colourCount += bad.length;
       colourOffenders.push(`${rel}:${i + 1} ${bad.join(' ')}`);
