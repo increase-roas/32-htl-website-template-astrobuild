@@ -360,6 +360,16 @@ const bigNumberSchema = z.object({
   claim: claimSchema.nullable().default(null),
 });
 
+/** Timed offer or event. The date is copy; the clock is derived at render. */
+const countdownSchema = z.object({
+  type: z.literal('countdown'),
+  eyebrow: z.string().min(1).nullable().default(null),
+  heading: z.string().min(1),
+  body: z.string().min(1).nullable().default(null),
+  /** ISO date-time. Invalid values render the heading only. */
+  endsAt: z.string().min(1),
+});
+
 /* ------------------------------------------------------------------ */
 
 export const sectionSchema = z.discriminatedUnion('type', [
@@ -382,6 +392,7 @@ export const sectionSchema = z.discriminatedUnion('type', [
   leadFormSchema,
   trustSchema,
   bigNumberSchema,
+  countdownSchema,
 ]);
 
 export type Section = z.infer<typeof sectionSchema>;

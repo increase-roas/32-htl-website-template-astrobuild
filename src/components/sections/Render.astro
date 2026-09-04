@@ -552,9 +552,58 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
             </p>
           </section>
         );
+
+      /* -------------------- COUNTDOWN -------------------- */
+      case 'countdown':
+        return (
+          <section class="sx-countdown" data-countdown-ends={section.endsAt}>
+            <div class="wrap">
+              {section.eyebrow && <p class="eyebrow">{section.eyebrow}</p>}
+              <h2 class="sx-h2 sx-h2--center">{section.heading}</h2>
+              {section.body && <p class="sx-ctaband-body">{section.body}</p>}
+              <div class="sx-countdown-units" hidden>
+                <div><strong data-unit="days">–</strong><span>Days</span></div>
+                <div><strong data-unit="hours">–</strong><span>Hours</span></div>
+                <div><strong data-unit="mins">–</strong><span>Min</span></div>
+                <div><strong data-unit="secs">–</strong><span>Sec</span></div>
+              </div>
+            </div>
+          </section>
+        );
+
+      default:
+        return null;
     }
   })
 }
+
+<script>
+  function tickCountdowns() {
+    const now = Date.now();
+    for (const root of document.querySelectorAll<HTMLElement>('[data-countdown-ends]')) {
+      const ends = Date.parse(root.dataset.countdownEnds ?? '');
+      const units = root.querySelector<HTMLElement>('.sx-countdown-units');
+      if (!units || !Number.isFinite(ends)) continue;
+      units.hidden = false;
+      const remaining = Math.max(0, ends - now);
+      const totalSeconds = Math.floor(remaining / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      const set = (unit: string, value: number) => {
+        const node = units.querySelector(`[data-unit="${unit}"]`);
+        if (node) node.textContent = String(value);
+      };
+      set('days', days);
+      set('hours', hours);
+      set('mins', mins);
+      set('secs', secs);
+    }
+  }
+  tickCountdowns();
+  window.setInterval(tickCountdowns, 1000);
+</script>
 
 <style>
   /* ---------- shared ---------- */
@@ -1173,6 +1222,37 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
   .sx-bignumber-label {
     margin: 0.4rem 0 0;
     color: var(--brand-ink-muted);
+  }
+
+  /* ---------- countdown ---------- */
+  .sx-countdown {
+    background: var(--brand-deep);
+    color: var(--brand-on-dark);
+    padding: 2.4rem 0;
+    text-align: center;
+  }
+  .sx-countdown .sx-h2 {
+    color: var(--brand-surface);
+  }
+  .sx-countdown-units {
+    display: flex;
+    justify-content: center;
+    gap: 1.4rem;
+    margin-top: 1.2rem;
+  }
+  .sx-countdown-units strong {
+    display: block;
+    font-family: var(--brand-font-display);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--brand-accent);
+  }
+  .sx-countdown-units span {
+    font-family: var(--brand-font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand-on-dark-muted);
   }
 
   /* ---------- breakpoints ---------- */

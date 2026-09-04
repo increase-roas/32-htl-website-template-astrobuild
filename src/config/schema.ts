@@ -358,7 +358,7 @@ const displaySchema = z.object({
  *
  * Sections: announcement, hero, stats, offercard, categories, products,
  * imagecards, benefits, gallery, reviews, comparison, promise, splitcards,
- * steps, faq, ctaband, cta, trust, bignumber.
+ * steps, faq, ctaband, cta, trust, bignumber, countdown.
  */
 const homepageSchema = z.object({
   /** Overrides <title>. Null falls back to identity.tagline. */
