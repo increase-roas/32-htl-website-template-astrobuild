@@ -83,7 +83,7 @@ if (!fin) {
   .fin-head {
     background: var(--brand-night);
     color: var(--brand-on-dark);
-    padding: 3rem 0 2.5rem;
+    padding: 2.25rem 0 2rem;
   }
   .fin-head h1 {
     font-family: var(--brand-font-display);
@@ -98,7 +98,7 @@ if (!fin) {
   .fin-body {
     display: grid;
     gap: 2.5rem;
-    padding: 2.5rem 0 4rem;
+    padding: 2rem 0 3rem;
   }
   .fin-points {
     list-style: none;
@@ -134,9 +134,13 @@ if (!fin) {
   }
 
   @media (min-width: 900px) {
+    .fin-head {
+      padding: 3rem 0 2.5rem;
+    }
     .fin-body {
       grid-template-columns: 1.15fr 1fr;
       gap: 3rem;
+      padding: 2.5rem 0 4rem;
     }
   }
 </style>

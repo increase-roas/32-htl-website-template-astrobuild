@@ -17,6 +17,7 @@
     "gate:fast": "node scripts/gate.mjs --no-render",
     "gate:template": "node scripts/template-gate.mjs",
     "gate:test": "node scripts/gate.test.mjs",
+    "test:spacing": "node scripts/mobile-spacing.test.mjs",
     "deploy": "npm run build && npm run gate && wrangler deploy"
   },
   "dependencies": {

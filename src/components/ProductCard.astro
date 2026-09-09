@@ -341,6 +341,25 @@ const pills = product.quickFacts.length > 0 ? product.quickFacts.slice(0, 3) : f
     transform: translateY(-1px);
   }
 
+  @media (max-width: 479px) {
+    .inv-card-body {
+      padding: 16px 16px 18px;
+    }
+    .inv-card-pills {
+      gap: 6px;
+    }
+    .inv-pill {
+      min-height: 64px;
+      padding: 8px 4px;
+    }
+    .inv-card-monthly {
+      font-size: 26px;
+    }
+    .inv-price-box {
+      flex-wrap: wrap;
+    }
+  }
+
   /* ---- Horizontal layout from 901px, matching the live list ---- */
   @media (min-width: 901px) {
     .inv-card {

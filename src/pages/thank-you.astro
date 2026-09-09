@@ -43,13 +43,23 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
   .ty {
     background: linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
     color: #fff;
-    padding: 72px 0 88px;
+    padding: 48px 0 64px;
     min-height: 60vh;
+  }
+  @media (min-width: 700px) {
+    .ty {
+      padding: 72px 0 88px;
+    }
   }
   .ty .eyebrow { color: var(--brand-accent-soft); }
   .ty h1 { font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: -0.02em; line-height: 1.06; }
   .ty-sub { margin-top: 16px; max-width: 56ch; color: var(--brand-on-dark); line-height: 1.65; }
-  .ty-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .ty-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+  .ty-actions .btn { width: 100%; }
+  @media (min-width: 600px) {
+    .ty-actions { flex-direction: row; flex-wrap: wrap; }
+    .ty-actions .btn { width: auto; }
+  }
   .ty-visit { margin-top: 48px; padding-top: 28px; border-top: 1px solid rgb(255 255 255 / 0.12); }
   .ty-visit h2 {
     font-family: var(--brand-font-mono); font-size: 0.66rem; font-weight: 600;

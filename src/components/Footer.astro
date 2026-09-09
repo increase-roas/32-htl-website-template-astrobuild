@@ -150,13 +150,13 @@ const { footerNav, socialLinks, mapEmbedUrl, directionsUrl, telHref, phoneDispla
     gap: 32px;
     max-width: var(--wrap);
     margin: 0 auto;
-    padding: 56px 20px 36px;
+    padding: 40px var(--page-gutter) 32px;
   }
   @media (min-width: 900px) {
     .footer-grid {
       grid-template-columns: 1.3fr 0.7fr 0.9fr 1fr;
       gap: 40px;
-      padding: 64px 24px 44px;
+      padding: 64px var(--page-gutter) 44px;
     }
   }
 
@@ -296,7 +296,7 @@ const { footerNav, socialLinks, mapEmbedUrl, directionsUrl, telHref, phoneDispla
     max-width: var(--wrap);
     margin: 0 auto;
     border-top: 1px solid rgb(255 255 255 / 0.1);
-    padding: 20px;
+    padding: 20px var(--page-gutter);
     font-size: 0.78rem;
     color: var(--brand-on-dark-muted);
   }
@@ -304,7 +304,7 @@ const { footerNav, socialLinks, mapEmbedUrl, directionsUrl, telHref, phoneDispla
     .footer-bottom {
       flex-direction: row;
       justify-content: space-between;
-      padding: 20px 24px;
+      padding: 20px var(--page-gutter);
     }
   }
 </style>

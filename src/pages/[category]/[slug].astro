@@ -226,13 +226,13 @@ const productSchema =
     display: grid;
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 24px 20px 56px;
+    padding: 24px 0 48px;
   }
   @media (min-width: 1000px) {
     .pdp {
       grid-template-columns: 1.05fr 1fr;
       gap: 48px;
-      padding: 32px 24px 72px;
+      padding: 32px 0 72px;
     }
   }
 
@@ -276,9 +276,14 @@ const productSchema =
 
   .pdp-gallery {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     margin-top: 12px;
+  }
+  @media (min-width: 600px) {
+    .pdp-gallery {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
   .pdp-gallery img {
     width: 100%;
@@ -394,13 +399,13 @@ const productSchema =
     display: grid;
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 8px 20px 64px;
+    padding: 8px 0 48px;
   }
   @media (min-width: 1000px) {
     .pdp-detail {
       grid-template-columns: 1fr 1fr;
       gap: 48px;
-      padding: 8px 24px 80px;
+      padding: 8px 0 80px;
     }
   }
   .pdp-detail h2 {
@@ -437,12 +442,12 @@ const productSchema =
   }
 
   .pdp-lead {
-    padding: 0 20px 56px;
+    padding: 0 0 48px;
     max-width: 720px;
   }
 
   .related {
-    padding: 0 20px 72px;
+    padding: 0 0 56px;
   }
   .related h2 {
     font-size: 1.2rem;
@@ -469,7 +474,7 @@ const productSchema =
   }
 
   .not-found {
-    padding: 72px 20px 96px;
+    padding: 56px 0 80px;
     text-align: center;
   }
   .not-found h1 {

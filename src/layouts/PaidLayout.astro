@@ -109,7 +109,7 @@ const { title, advertorialLabel } = Astro.props;
       .lp-header {
         display: flex;
         justify-content: center;
-        padding: 1.25rem 1rem;
+        padding: 1.25rem var(--page-gutter);
         background: var(--brand-night);
       }
       .lp-header img {
@@ -126,7 +126,7 @@ const { title, advertorialLabel } = Astro.props;
       }
       .lp-footer {
         margin-top: 3.5rem;
-        padding: 2rem 1.25rem 3rem;
+        padding: 2rem var(--page-gutter) 3rem;
         background: var(--brand-night);
         color: var(--brand-on-dark);
         text-align: center;

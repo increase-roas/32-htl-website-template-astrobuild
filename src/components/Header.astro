@@ -141,7 +141,7 @@ const cta = site.nav.primaryCta;
     min-height: 64px;
     max-width: var(--wrap);
     margin: 0 auto;
-    padding: 12px 20px;
+    padding: 12px var(--page-gutter);
   }
 
   /* ---- Logo ---- */
@@ -271,7 +271,7 @@ const cta = site.nav.primaryCta;
       radial-gradient(1000px 700px at 85% -10%, rgb(var(--brand-primary-rgb) / 0.55), transparent 60%),
       linear-gradient(180deg, var(--brand-night), var(--brand-abyss));
     color: #fff;
-    padding: 22px 20px calc(34px + env(safe-area-inset-bottom));
+    padding: 22px var(--page-gutter) calc(34px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     transform: translateX(102%);

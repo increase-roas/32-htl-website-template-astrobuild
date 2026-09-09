@@ -608,10 +608,10 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
 <style>
   /* ---------- shared ---------- */
   .sx-section {
-    padding: 3.25rem 0;
+    padding: var(--section-pad-y) 0;
   }
   .sx-band {
-    padding: 3.25rem 0;
+    padding: var(--section-pad-y) 0;
   }
   .sx-band--alt {
     background: var(--brand-surface-alt);
@@ -733,7 +733,7 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
     gap: 0.7rem;
     align-items: center;
     justify-content: center;
-    padding: 0.55rem 1rem;
+    padding: 0.55rem 0;
     text-align: center;
   }
   .sx-announce-badge {
@@ -1256,6 +1256,37 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
   }
 
   /* ---------- breakpoints ---------- */
+  @media (max-width: 699px) {
+    .sx-section {
+      padding: 2.25rem 0;
+    }
+    .sx-band {
+      padding: 2.25rem 0;
+    }
+    .sx-hero {
+      padding: 2.25rem 0;
+    }
+    .sx-hero-card {
+      padding: 1.1rem 1rem 1.2rem;
+    }
+    .sx-offer {
+      padding: 1.5rem 1.15rem 1.6rem;
+    }
+    .sx-promise,
+    .sx-ctaband {
+      padding: 2.25rem 0;
+    }
+    .sx-stats {
+      padding: 1.25rem 0;
+    }
+    .sx-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .sx-actions .btn {
+      width: 100%;
+    }
+  }
   @media (min-width: 700px) {
     .sx-stats-inner {
       grid-template-columns: repeat(4, 1fr);
