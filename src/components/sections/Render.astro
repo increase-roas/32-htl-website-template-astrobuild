@@ -608,10 +608,10 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
 <style>
   /* ---------- shared ---------- */
   .sx-section {
-    padding: var(--section-pad-y) 0;
+    padding-block: var(--section-pad-y);
   }
   .sx-band {
-    padding: var(--section-pad-y) 0;
+    padding-block: var(--section-pad-y);
   }
   .sx-band--alt {
     background: var(--brand-surface-alt);
@@ -733,7 +733,7 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
     gap: 0.7rem;
     align-items: center;
     justify-content: center;
-    padding: 0.55rem 0;
+    padding-block: 0.55rem;
     text-align: center;
   }
   .sx-announce-badge {
@@ -755,7 +755,7 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
   .sx-hero {
     background: linear-gradient(180deg, var(--brand-night) 0%, var(--brand-abyss) 100%);
     color: var(--brand-on-dark);
-    padding: 3.5rem 0;
+    padding-block: 3.5rem;
     position: relative;
   }
   .sx-hero--image::before {
@@ -903,7 +903,7 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
   }
   .sx-imagecard-body {
     position: relative;
-    padding: 1rem 1.1rem;
+    padding: 1.15rem 1.25rem;
     margin-top: 120px;
     background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.75));
   }
@@ -1258,13 +1258,13 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
   /* ---------- breakpoints ---------- */
   @media (max-width: 699px) {
     .sx-section {
-      padding: 2.25rem 0;
+      padding-block: 2.25rem;
     }
     .sx-band {
-      padding: 2.25rem 0;
+      padding-block: 2.25rem;
     }
     .sx-hero {
-      padding: 2.25rem 0;
+      padding-block: 2.25rem;
     }
     .sx-hero-card {
       padding: 1.1rem 1rem 1.2rem;
@@ -1274,10 +1274,10 @@ const btnClass = (style: string) => (style === 'primary' ? 'btn btn-gold' : 'btn
     }
     .sx-promise,
     .sx-ctaband {
-      padding: 2.25rem 0;
+      padding-block: 2.25rem;
     }
     .sx-stats {
-      padding: 1.25rem 0;
+      padding-block: 1.25rem;
     }
     .sx-actions {
       flex-direction: column;

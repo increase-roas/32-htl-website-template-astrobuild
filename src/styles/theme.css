@@ -16,17 +16,14 @@
   --ease-out: cubic-bezier(0.22, 0.68, 0, 1);
   --wrap: 1200px;
   /* One gutter for header, footer, and .wrap. Pages must not add a second inset. */
-  --page-gutter: 16px;
+  --page-gutter: 24px;
   --section-pad-y: 2.25rem;
 }
-@media (min-width: 480px) {
-  :root { --page-gutter: 20px; }
-}
 @media (min-width: 700px) {
-  :root { --section-pad-y: 3.25rem; }
+  :root { --section-pad-y: 3.25rem; --page-gutter: 28px; }
 }
 @media (min-width: 900px) {
-  :root { --page-gutter: 24px; }
+  :root { --page-gutter: 32px; }
 }
 
 /* ---------- Base ---------- */

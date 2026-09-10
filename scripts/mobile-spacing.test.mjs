@@ -3,8 +3,8 @@
  * Mobile gutter convention.
  *
  * `.wrap` owns the page's horizontal inset. A second class on the same
- * element that also sets padding-left/right doubles the gutter on phones
- * (20px + 20px = 40px of a 390px screen). This scan fails that pattern.
+ * element must not use the `padding` shorthand — `padding: 2rem 0` sets
+ * left/right to 0 and wipes the gutter. Use padding-block instead.
  *
  *   node scripts/mobile-spacing.test.mjs
  */
@@ -35,13 +35,8 @@ function isZero(value) {
 
 function horizontalPaddingHits(block) {
   const hits = [];
-  for (const match of block.matchAll(/padding\s*:\s*([^;]+)/g)) {
-    const parts = match[1].trim().split(/\s+/);
-    if (parts.length === 2 || parts.length === 3) {
-      if (!isZero(parts[1])) hits.push(match[0].trim());
-    } else if (parts.length === 4) {
-      if (!isZero(parts[1]) || !isZero(parts[3])) hits.push(match[0].trim());
-    }
+  for (const match of block.matchAll(/(?<!-)padding\s*:\s*([^;]+)/g)) {
+    hits.push(match[0].trim());
   }
   for (const match of block.matchAll(/padding-(?:left|right|inline)\s*:\s*([^;]+)/g)) {
     const value = match[1].trim().split(/\s+/)[0];
@@ -73,8 +68,8 @@ function ruleBodies(css, className) {
 const failures = [];
 
 const theme = await readFile(join(SRC, 'styles', 'theme.css'), 'utf8');
-if (!/--page-gutter/.test(theme)) {
-  failures.push('theme.css must define --page-gutter so every shell uses one inset');
+if (!/--page-gutter:\s*24px/.test(theme)) {
+  failures.push('mobile --page-gutter must be 24px so content is not flush to the screen');
 }
 if (!/\.wrap\s*\{[^}]*padding-inline:\s*var\(--page-gutter\)/.test(theme.replace(/\s+/g, ' '))) {
   failures.push('.wrap must read padding-inline from --page-gutter');

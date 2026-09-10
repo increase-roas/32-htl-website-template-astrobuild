@@ -226,13 +226,13 @@ const productSchema =
     display: grid;
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 24px 0 48px;
+    padding-block: 24px 48px;
   }
   @media (min-width: 1000px) {
     .pdp {
       grid-template-columns: 1.05fr 1fr;
       gap: 48px;
-      padding: 32px 0 72px;
+      padding-block: 32px 72px;
     }
   }
 
@@ -399,13 +399,13 @@ const productSchema =
     display: grid;
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 8px 0 48px;
+    padding-block: 8px 48px;
   }
   @media (min-width: 1000px) {
     .pdp-detail {
       grid-template-columns: 1fr 1fr;
       gap: 48px;
-      padding: 8px 0 80px;
+      padding-block: 8px 80px;
     }
   }
   .pdp-detail h2 {
@@ -442,12 +442,12 @@ const productSchema =
   }
 
   .pdp-lead {
-    padding: 0 0 48px;
+    padding-block: 0 48px;
     max-width: 720px;
   }
 
   .related {
-    padding: 0 0 56px;
+    padding-block: 0 56px;
   }
   .related h2 {
     font-size: 1.2rem;
@@ -474,7 +474,7 @@ const productSchema =
   }
 
   .not-found {
-    padding: 56px 0 80px;
+    padding-block: 56px 80px;
     text-align: center;
   }
   .not-found h1 {
