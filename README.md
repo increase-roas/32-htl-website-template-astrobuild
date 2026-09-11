@@ -340,6 +340,8 @@ So the gate finishes by printing a checklist it cannot tick for you:
 
 Green machine checks are permission to start looking, not permission to ship.
 
+Human QA for a client launch (checklist + tester instructions) lives in **[docs/qa/](docs/qa/TESTING-INSTRUCTIONS.md)**.
+
 ---
 
 ## Rules for working in this repo
